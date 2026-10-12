@@ -45,12 +45,13 @@ match `package.json`.
 
 ## Current release
 
-[v3.2.0 — Clear diagrams and guided exploration](releases/v3.2.0.md)
+[v3.2.1 — Free canvas panning](releases/v3.2.1.md)
 
 ## Historical releases
 
 Canonical notes, newest first:
 
+- [v3.2.0](releases/v3.2.0.md)
 - [v3.1.0](releases/v3.1.0.md)
 - [v3.0.0](releases/v3.0.0.md)
 - [v2.7.0](releases/v2.7.0.md)

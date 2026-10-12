@@ -27,8 +27,8 @@ SSRS/RDL report definition and renders an explorable diagram.
 
 ## First run
 
-1. Download the v3.2.0 runtime ZIP from the
-   [GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.2.0),
+1. Download the v3.2.1 runtime ZIP from the
+   [GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.2.1),
    or clone the repository for development.
 2. Open `index.html` in a current Chromium, Firefox, or Edge browser. The
    runtime does not require a server or a database connection.
@@ -127,6 +127,10 @@ claim a runtime execution path. **Clear focus** restores the prior viewport.
 The **Diagram key** lists the provenance and relationship kinds present in the
 current view. A node click opens context only; **Go to source** and **Open
 object** are explicit navigation actions.
+
+Drag the flow canvas or a diagram node to pan freely in any direction.
+A drag does not select the node. **Fit overview** brings the complete chart
+back into view.
 
 A worked example. This procedure is the input:
 
@@ -255,6 +259,10 @@ not guarantee semantic correctness; verify important findings against the
 input and target database.
 
 ### ERD query builder
+
+Drag empty ERD canvas to pan freely, including right and down from the default
+view. Drag a table card to move that table within the layout. **Fit** recentres
+the whole schema, or the selected table and its declared neighbours.
 
 On `erd.html`, choose **Query builder** to pick columns directly on the table
 cards. Every card shows a checkbox per column, and a floating window (drag its

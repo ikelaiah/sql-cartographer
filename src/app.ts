@@ -681,10 +681,34 @@
   $('z-out').onclick=function(){ scale=Math.max(0.1,scale/1.2); apply(); };
   $('z-fit').onclick=function(){ fit('overview'); };
   $('flow-clear-focus').onclick=clearFlowFocus;
-  var dragging=false, sx=0, sy=0;
-  canvas.addEventListener('mousedown',function(e){ dragging=true; sx=e.clientX-panX; sy=e.clientY-panY; canvas.classList.add('dragging'); });
-  window.addEventListener('mousemove',function(e){ if(!dragging) return; panX=e.clientX-sx; panY=e.clientY-sy; apply(); });
-  window.addEventListener('mouseup',function(){ dragging=false; canvas.classList.remove('dragging'); });
+  var dragging=false, didDrag=false, dragStartX=0, dragStartY=0,
+      dragPanX=0, dragPanY=0;
+  canvas.addEventListener('mousedown',function(e){
+    didDrag=false;
+    if(e.button!==0||(e.target as Element).closest(
+      '.flow-inspector,.flow-legend,.zoom,button,input,select,textarea,a,summary')) return;
+    dragging=true;
+    dragStartX=e.clientX; dragStartY=e.clientY;
+    dragPanX=panX; dragPanY=panY;
+  });
+  window.addEventListener('mousemove',function(e){
+    if(!dragging) return;
+    var dx=e.clientX-dragStartX, dy=e.clientY-dragStartY;
+    if(Math.abs(dx)>4||Math.abs(dy)>4) didDrag=true;
+    if(!didDrag) return;
+    e.preventDefault();
+    canvas.classList.add('dragging');
+    panX=dragPanX+dx; panY=dragPanY+dy; apply();
+  });
+  function endCanvasDrag(): void {
+    dragging=false; canvas.classList.remove('dragging');
+  }
+  window.addEventListener('mouseup',endCanvasDrag);
+  window.addEventListener('blur',endCanvasDrag);
+  canvas.addEventListener('click',function(e){
+    if(!didDrag||e.detail===0) return;
+    didDrag=false; e.stopPropagation(); e.preventDefault();
+  },true);
   canvas.addEventListener('wheel',function(e){
     if(!e.ctrlKey&&!e.metaKey) return;
     e.preventDefault();
