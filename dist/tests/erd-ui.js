@@ -213,7 +213,12 @@
             pick('DBO.ORDERHEADER', 'PlacedAt');
             await wait(120);
             /* ---- resize ---- */
-            var floatRect = get('qb-float').getBoundingClientRect();
+            var queryWindow = get('qb-float');
+            /* Give the gesture room to grow at different browser/font metrics. */
+            queryWindow.style.maxHeight = 'none';
+            queryWindow.style.width = '400px';
+            queryWindow.style.height = '320px';
+            var floatRect = queryWindow.getBoundingClientRect();
             var grip = get('qb-resize');
             var gripRect = grip.getBoundingClientRect();
             grip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0,
@@ -222,7 +227,8 @@
                 clientX: gripRect.left + 90, clientY: gripRect.top + 70, pointerId: 7 }));
             grip.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 7 }));
             var grownRect = get('qb-float').getBoundingClientRect();
-            record('pointer resize grows the window', grownRect.width > floatRect.width + 50 && grownRect.height > floatRect.height + 30);
+            record('pointer resize grows the window', grownRect.width > floatRect.width + 50 && grownRect.height > floatRect.height + 30, { before: { width: floatRect.width, height: floatRect.height },
+                after: { width: grownRect.width, height: grownRect.height } });
             grip.focus();
             grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
             record('keyboard resize shrinks the window', get('qb-float').getBoundingClientRect().width < grownRect.width);
@@ -371,6 +377,50 @@
             await wait(200);
             record('reopening keeps picks and rebuilds SQL', d.querySelectorAll('#qb-picks .qb-chip').length === 2 &&
                 sql().indexOf('ORDER') < 0 && sql().indexOf('FROM') >= 0, sql());
+            get('erd-sql').value = 'CREATE TABLE dbo.broken (id INT,';
+            get('erd-sql').dispatchEvent(new Event('input'));
+            get('btn-erd-draw').click();
+            var schemaDiagnostics = Array.prototype.slice.call(d.querySelectorAll('#erd-diagnostic-list li'));
+            record('schema diagnostics retain code, severity, and scope', !get('erd-diagnostics').hidden && schemaDiagnostics.length > 0 &&
+                schemaDiagnostics.every(function (row) {
+                    return !!row.dataset.severity && !!row.dataset.code && !!row.dataset.scope;
+                }), schemaDiagnostics.map(function (row) { return row.outerHTML.slice(0, 200); }));
+            var diagnosticSource = d.querySelector('#erd-diagnostic-list button[data-action="source"]');
+            if (diagnosticSource)
+                diagnosticSource.click();
+            record('a schema diagnostic selects its DDL source span', !!diagnosticSource && get('erd-sql').selectionEnd > get('erd-sql').selectionStart &&
+                get('erd-sql').selectionEnd <= get('erd-sql').value.length);
+            var ddlBeforeLesson = 'CREATE TABLE dbo.keep_me (id INT PRIMARY KEY);';
+            get('erd-sql').value = ddlBeforeLesson;
+            get('erd-sql').dispatchEvent(new Event('input'));
+            get('guided-lesson-menu').querySelector('[data-guided-lesson="schema-join"]').click();
+            var lessonDialog = get('lesson-confirm');
+            var lessonPrompted = lessonDialog.open;
+            get('lesson-confirm-cancel').click();
+            record('cancelling the schema lesson preserves DDL', lessonPrompted && get('erd-sql').value === ddlBeforeLesson &&
+                get('guided-lesson-panel').hidden, { lessonPrompted: lessonPrompted, value: get('erd-sql').value,
+                panelHidden: get('guided-lesson-panel').hidden });
+            get('btn-erd-sample').click();
+            var samplePrompted = lessonDialog.open;
+            get('lesson-confirm-cancel').click();
+            record('the existing schema sample asks before replacing DDL', samplePrompted && get('erd-sql').value === ddlBeforeLesson);
+            get('guided-lesson-menu').querySelector('[data-guided-lesson="schema-join"]').click();
+            get('lesson-confirm-apply').click();
+            record('the schema lesson explains a declared three-table join', !get('guided-lesson-panel').hidden &&
+                get('guided-lesson-steps').children.length === 3 &&
+                /Customer|OrderHeader|OrderLine/.test(get('erd-sql').value) &&
+                get('erd-tables').textContent === '3', { tables: get('erd-tables').textContent, source: get('erd-sql').value.slice(0, 100),
+                dialogOpen: lessonDialog.open, panelHidden: get('guided-lesson-panel').hidden });
+            var longEntityName = 'dbo.BillingAdjustmentAwaitingFinanceApproval';
+            get('erd-sql').value = 'CREATE TABLE ' + longEntityName + ' (Id INT PRIMARY KEY);';
+            get('btn-erd-draw').click();
+            var longTitle = d.querySelector('#erd-cards .erd-card h3');
+            var longCard = longTitle && longTitle.closest('.erd-card');
+            var longTitleStyle = longTitle ? body.getComputedStyle(longTitle) : null;
+            record('long ERD identifiers wrap completely inside their cards', !!longTitle && !!longCard && longTitle.textContent === longEntityName &&
+                !!longTitleStyle && longTitleStyle.overflowWrap === 'anywhere' &&
+                longTitle.clientWidth > 0 && longTitle.scrollWidth <= longTitle.clientWidth &&
+                longTitle.getBoundingClientRect().right <= longCard.getBoundingClientRect().right);
             finish();
         })().catch(function (err) {
             record('suite completed without exceptions', false, String(err && err.stack || err));

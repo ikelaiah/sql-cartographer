@@ -1,10 +1,19 @@
 # SQL Cartographer Roadmap — Diagram Accuracy
 
+> **Current planning:** [v3.3.0 through v5.0.0](docs/plans/v3.3.0-to-v5.0.0.md)
+> sets a bounded release sequence, effort estimates, and conditional major-version
+> gates. Start with the [v3.3.0 plan](tasks/v3.3.0-plan.md) and
+> [checklist](tasks/v3.3.0-todo.md). The accuracy workstreams below are preserved
+> as historical evidence.
+
 > **Historical.** This roadmap records the v1.x/v2.0 accuracy-convergence
 > workstreams, all of which shipped. It predates the ERD, query builder, and
 > aggregate features (v2.1–v2.6) and is not the current plan. See
 > [CHANGELOG.md](CHANGELOG.md) and [docs/RELEASES.md](docs/RELEASES.md) for
-> what shipped.
+> what shipped. The v3.2.0 implementation and local qualification are recorded
+> in [docs/releases/v3.2.0.md](docs/releases/v3.2.0.md), against the
+> [specification](docs/plans/v3.2.0.md) and [checklist](tasks/todo.md), with
+> [browser review evidence](docs/plans/v3.2.0-review.md).
 
 ## Contents
 

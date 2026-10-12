@@ -60,6 +60,45 @@
         results.push({ name: 'single modified CREATE paste remains one clean source',
             pass: get('object-select').options.length === 1 && get('sql').value === pastedSource,
             detail: { objectCount: get('object-select').options.length, source: get('sql').value } });
+        var selectedBeforeLesson = get('object-select').value;
+        var panelBeforeLesson = get('guided-lesson-panel').hidden;
+        get('guided-lesson-menu').querySelector('[data-guided-lesson="branch"]').click();
+        var lessonDialog = get('lesson-confirm');
+        var lessonCancelOpened = lessonDialog.open;
+        get('lesson-confirm-cancel').click();
+        results.push({ name: 'cancelling a lesson preserves SQL and selected object',
+            pass: lessonCancelOpened && get('sql').value === pastedSource &&
+                get('object-select').value === selectedBeforeLesson &&
+                get('guided-lesson-panel').hidden === panelBeforeLesson });
+        get('guided-lesson-menu').querySelector('[data-guided-lesson="branch"]').click();
+        get('lesson-confirm-apply').click();
+        results.push({ name: 'a guided branch lesson loads its view, goal, and inspection steps',
+            pass: /CREATE PROCEDURE dbo\.CheckCapacity/.test(get('sql').value) &&
+                get('opt-dialect').value === 'tsql' && get('opt-view').value === 'flow' &&
+                !get('guided-lesson-panel').hidden &&
+                get('guided-lesson-steps').children.length === 3 });
+        get('opt-scope').value = 'dependencies';
+        get('opt-scope').dispatchEvent(new Event('change'));
+        get('guided-lesson-menu').querySelector('[data-guided-lesson="temp-flow"]').click();
+        get('lesson-confirm-apply').click();
+        results.push({ name: 'the temporary-flow lesson opens control flow with a temp-table example',
+            pass: /INTO #ActiveCustomer/.test(get('sql').value) && get('opt-view').value === 'flow' &&
+                get('opt-scope').value === 'internal' &&
+                /temporary-table/.test(get('guided-lesson-goal').textContent) });
+        get('guided-lesson-menu').querySelector('[data-guided-lesson="query-pipeline"]').click();
+        get('lesson-confirm-apply').click();
+        results.push({ name: 'the query-pipeline lesson opens the query view with two CTEs',
+            pass: /ActiveOrders/.test(get('sql').value) && /CustomerTotals/.test(get('sql').value) &&
+                get('opt-view').value === 'query' &&
+                /named query steps/.test(get('guided-lesson-goal').textContent) });
+        get('sql').value = 'SELECT 99;';
+        get('sql').dispatchEvent(new Event('input'));
+        get('btn-sample').click();
+        var advancedDialog = get('lesson-confirm');
+        var advancedPrompted = advancedDialog.open;
+        get('lesson-confirm-cancel').click();
+        results.push({ name: 'the representative dialect sample also asks before replacement',
+            pass: advancedPrompted && get('sql').value === 'SELECT 99;' });
         var source = [
             'CREATE VIEW dbo.export_students AS SELECT id FROM dbo.student;',
             'GO',
@@ -126,6 +165,10 @@
             pass: get('coverage-val').textContent === '100%' &&
                 /%$/.test(get('confidence-val').textContent) &&
                 /^\d+$/.test(get('diagnostic-val').textContent) });
+        results.push({ name: 'analysis health defines its measures and limits',
+            pass: /dialect certainty/.test(get('health-note').textContent) &&
+                /body tokens/.test(get('health-note').textContent) &&
+                /semantic correctness/.test(get('health-note').textContent) });
         results.push({ name: 'analysis health data-band derives from the confidence formula',
             pass: (function () {
                 var pct = parseInt(get('confidence-val').textContent, 10);
@@ -149,17 +192,138 @@
         results.push({ name: 'control flow and query structure selector',
             pass: flowCode !== queryCode && /dbo\.export_students/.test(queryCode) &&
                 get('cc-label').textContent === 'Moving parts' });
+        view.value = 'flow';
+        view.dispatchEvent(new Event('change'));
         setTimeout(function () {
-            var node = d.querySelector('#stage .node[data-source-start]'), before = get('sql').selectionEnd;
+            var node = d.querySelector('#stage .node[data-source-start]'), beforeStart = get('sql').selectionStart, beforeEnd = get('sql').selectionEnd, viewportBeforeSelect = get('stage').style.transform, diagramBeforeSelect = get('mermaid-out').textContent, relationships = Array.prototype.slice.call(d.querySelectorAll('#stage .edgePath,#stage .edgePaths path,#stage .flowchart-link')), beforeEdges = relationships.map(function (edge) { return edge.getAttribute('class'); }).join('|');
+            var visualLabel = d.querySelector('#stage .node .label');
+            var visualFont = visualLabel ? parseFloat(w.getComputedStyle(visualLabel).fontSize) : 0;
+            var scaleMatch = /scale\(([-\d.]+)\)/.exec(get('stage').style.transform);
+            var visualScale = scaleMatch ? Number(scaleMatch[1]) : 1;
+            results.push({ name: 'flow labels remain at least 12 CSS pixels at the default view scale',
+                pass: !!visualLabel && visualFont * visualScale >= 12,
+                detail: { font: visualFont, scale: visualScale, rendered: visualFont * visualScale } });
+            if (node)
+                node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            results.push({ name: 'Enter selects a keyboard-reachable flow step',
+                pass: !!node && !get('flow-inspector').hidden &&
+                    get('flow-inspector-title').textContent.length > 0 });
+            if (!get('flow-clear-focus').hidden)
+                get('flow-clear-focus').click();
             if (node)
                 node.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-            results.push({ name: 'diagram source selection',
-                pass: !!node && get('sql').selectionEnd > get('sql').selectionStart &&
-                    get('sql').selectionEnd !== before,
+            var inspector = get('flow-inspector'), sourceAction = d.querySelector('#flow-source-actions button[data-action="source"]');
+            results.push({ name: 'selecting a flow node opens its evidence without moving the editor',
+                pass: !!node && !!inspector && !inspector.hidden &&
+                    get('sql').selectionStart === beforeStart && get('sql').selectionEnd === beforeEnd &&
+                    !!sourceAction && get('flow-inspector-title').textContent.length > 0,
                 detail: { nodeCount: d.querySelectorAll('#stage .node').length,
                     linkedCount: d.querySelectorAll('#stage .node[data-source-start]').length,
-                    ids: Array.prototype.map.call(d.querySelectorAll('#stage .node'), function (n) { return n.id; }),
-                    start: get('sql').selectionStart, end: get('sql').selectionEnd, before: before } });
+                    inspector: !!inspector && !inspector.hidden,
+                    start: get('sql').selectionStart, end: get('sql').selectionEnd,
+                    beforeStart: beforeStart, beforeEnd: beforeEnd } });
+            if (sourceAction)
+                sourceAction.click();
+            results.push({ name: 'flow inspector source action selects the exact step',
+                pass: !!sourceAction && get('sql').selectionEnd > get('sql').selectionStart &&
+                    get('sql').selectionStart === Number(node.getAttribute('data-source-start')) &&
+                    get('sql').selectionEnd === Number(node.getAttribute('data-source-end')) });
+            var overviewButton = get('z-fit');
+            results.push({ name: 'overview control names the view it opens',
+                pass: !!overviewButton && /overview/i.test(overviewButton.textContent) &&
+                    /overview/i.test(overviewButton.getAttribute('aria-label') || ''),
+                detail: overviewButton ? overviewButton.outerHTML : '' });
+            var constrainScale = w.flowDiagramConstrainScale;
+            results.push({ name: 'default view keeps labels readable while overview fits a large graph',
+                pass: typeof constrainScale === 'function' &&
+                    constrainScale(0.2, 'reading') >= 0.93 &&
+                    constrainScale(0.2, 'overview') <= 0.2 });
+            var clearFocus = get('flow-clear-focus');
+            results.push({ name: 'selecting a node can highlight its modelled neighbours',
+                pass: !!clearFocus && !clearFocus.hidden &&
+                    !!d.querySelector('#stage .node.flow-node-selected[data-selected="true"]') &&
+                    relationships.some(function (edge) { return /flow-edge-connected/.test(edge.getAttribute('class') || ''); }),
+                detail: { clearHidden: clearFocus && clearFocus.hidden,
+                    selectedCount: d.querySelectorAll('#stage .node.flow-node-selected[data-selected="true"]').length,
+                    edges: relationships.map(function (edge) { return { id: edge.id, cls: edge.getAttribute('class') }; }) } });
+            var neighborhood = Array.prototype.slice.call(d.querySelectorAll('#stage .node:not(.flow-node-muted)'));
+            var focusBounds = neighborhood.map(function (item) { return item.getBoundingClientRect(); });
+            var focusCenter = focusBounds.length ? focusBounds.reduce(function (rect, next) {
+                return { left: Math.min(rect.left, next.left), right: Math.max(rect.right, next.right),
+                    top: Math.min(rect.top, next.top), bottom: Math.max(rect.bottom, next.bottom) };
+            }, { left: focusBounds[0].left, right: focusBounds[0].right,
+                top: focusBounds[0].top, bottom: focusBounds[0].bottom }) : null;
+            var canvasRect = get('canvas').getBoundingClientRect();
+            var focusSafeRight = Math.min(canvasRect.right, get('flow-inspector').getBoundingClientRect().left - 12);
+            if (focusSafeRight - canvasRect.left <= 120)
+                focusSafeRight = canvasRect.right;
+            results.push({ name: 'selecting a step frames its immediate neighbourhood',
+                pass: !!focusCenter &&
+                    Math.abs((focusCenter.left + focusCenter.right) / 2 - (canvasRect.left + focusSafeRight) / 2) < 8 &&
+                    Math.abs((focusCenter.top + focusCenter.bottom) / 2 - (canvasRect.top + canvasRect.bottom) / 2) < 8,
+                detail: focusCenter && { bounds: focusCenter, canvas: canvasRect.toJSON() } });
+            var selectedSvg = d.querySelector('#stage svg');
+            var cleanSvg = w.flowDiagramCloneForExport(selectedSvg);
+            results.push({ name: 'temporary focus styling is removed from SVG export without changing the view',
+                pass: !!cleanSvg && !cleanSvg.querySelector('.flow-node-selected,.flow-node-muted,.flow-edge-connected,.flow-edge-muted') &&
+                    !Array.prototype.some.call(cleanSvg.querySelectorAll('.node'), function (item) {
+                        return item.hasAttribute('data-selected') || item.hasAttribute('aria-pressed');
+                    }) && !!d.querySelector('#stage .node.flow-node-selected') &&
+                    get('mermaid-out').textContent === diagramBeforeSelect });
+            var flowLegend = get('flow-legend-items').textContent || '';
+            results.push({ name: 'diagram key names provenance and relationship kinds in the view',
+                pass: !get('flow-legend').hidden && /Node evidence/.test(flowLegend) &&
+                    /source/i.test(flowLegend) && /Relationship kinds/.test(flowLegend) &&
+                    /control/i.test(flowLegend), detail: flowLegend });
+            if (clearFocus)
+                clearFocus.click();
+            results.push({ name: 'clearing focus restores every relationship',
+                pass: !!clearFocus && clearFocus.hidden &&
+                    get('stage').style.transform === viewportBeforeSelect &&
+                    Array.prototype.slice.call(d.querySelectorAll('#stage .edgePath,#stage .edgePaths path,#stage .flowchart-link'))
+                        .map(function (edge) { return edge.getAttribute('class'); }).join('|') === beforeEdges });
+            var inspectorGraph = { nodes: [], edges: [], stats: {} };
+            var synthetic = { id: 'lesson-generated', shape: 'rect', text: 'Generated exit',
+                cls: 'flowctl', source: null, provenance: 'synthetic', reason: 'procedure ends here' };
+            inspectorGraph.nodes = [synthetic];
+            w.flowDiagramRenderInspector(inspector, inspectorGraph, synthetic, 100, function () { }, null);
+            results.push({ name: 'synthetic nodes explain their reason without a fake source action',
+                pass: /Generated by SQL Cartographer: procedure ends here/.test(get('flow-inspector-body').textContent) &&
+                    d.querySelectorAll('#flow-source-actions button[data-action="source"]').length === 0 });
+            var grouped = { id: 'lesson-grouped', shape: 'rect', text: 'Grouped statements',
+                cls: 'src', source: null, provenance: 'source', sources: [{ start: 0, end: 6 }, { start: 7, end: 13 }] };
+            inspectorGraph.nodes = [grouped];
+            var navigatedSpans = 0;
+            w.flowDiagramRenderInspector(inspector, inspectorGraph, grouped, 100, function () { navigatedSpans++; }, null);
+            Array.prototype.forEach.call(d.querySelectorAll('#flow-source-actions button[data-action="source"]'), function (button) { button.click(); });
+            results.push({ name: 'grouped nodes offer one source action per recorded span',
+                pass: navigatedSpans === 2 &&
+                    d.querySelectorAll('#flow-source-actions button[data-action="source"]').length === 2 });
+            var objectNode = { id: 'lesson-object', shape: 'rect', text: 'dbo.Other',
+                cls: 'src', source: null, provenance: 'external', objectId: 'known-object' };
+            inspectorGraph.nodes = [objectNode];
+            var openedObject = false;
+            w.flowDiagramRenderInspector(inspector, inspectorGraph, objectNode, 0, function () { }, function () { openedObject = true; });
+            var openObject = d.querySelector('#flow-source-actions button[data-action="object"]');
+            results.push({ name: 'known objects open only through the inspector action',
+                pass: !!openObject && !openedObject });
+            if (openObject)
+                openObject.click();
+            results.push({ name: 'the explicit object action invokes the controller callback',
+                pass: openedObject });
+            var external = { id: 'lesson-external', shape: 'rect', text: 'dbo.Customer',
+                cls: 'src', source: null, provenance: 'external', resolvedName: 'catalogue.dbo.Customer' };
+            inspectorGraph.nodes = [external];
+            w.flowDiagramRenderInspector(inspector, inspectorGraph, external, 100, function () { }, null);
+            results.push({ name: 'external nodes distinguish a referenced object from supplied source',
+                pass: /catalogue resolves it as catalogue\.dbo\.Customer/.test(get('flow-inspector-body').textContent) &&
+                    d.querySelectorAll('#flow-source-actions button[data-action="source"]').length === 0 });
+            var invalidSpan = { id: 'lesson-invalid-span', shape: 'rect', text: 'No evidence',
+                cls: 'src', source: { start: -1, end: 2 }, provenance: 'source' };
+            inspectorGraph.nodes = [invalidSpan];
+            w.flowDiagramRenderInspector(inspector, inspectorGraph, invalidSpan, 10, function () { }, null);
+            results.push({ name: 'invalid node ranges never get a source action',
+                pass: d.querySelectorAll('#flow-source-actions button[data-action="source"]').length === 0 });
             get('sql').value = 'END SELECT (1;';
             get('sql').dispatchEvent(new Event('input'));
             get('opt-dialect').value = 'tsql';
@@ -168,6 +332,26 @@
                 pass: parseInt(get('coverage-val').textContent, 10) < 100 &&
                     parseInt(get('diagnostic-val').textContent, 10) >= 2 &&
                     get('analysis-health').getAttribute('data-band') === 'low' });
+            var diagnosticRows = Array.prototype.slice.call(d.querySelectorAll('#analysis-diagnostic-list li'));
+            results.push({ name: 'flow diagnostics keep severity, code, scope, and source actions',
+                pass: !get('analysis-diagnostics').hidden && diagnosticRows.length >= 2 &&
+                    diagnosticRows.every(function (row) {
+                        return !!row.dataset.severity && !!row.dataset.code && !!row.dataset.scope;
+                    }) && !!get('analysis-diagnostic-summary').textContent,
+                detail: { summary: get('analysis-diagnostic-summary').textContent,
+                    rows: diagnosticRows.map(function (row) { return row.outerHTML.slice(0, 200); }) } });
+            var diagnosticSource = d.querySelector('#analysis-diagnostic-list button[data-action="source"]');
+            if (diagnosticSource)
+                diagnosticSource.click();
+            results.push({ name: 'a flow diagnostic selects its reported source span',
+                pass: !!diagnosticSource && get('sql').selectionEnd > get('sql').selectionStart &&
+                    get('sql').selectionStart >= 0 && get('sql').selectionEnd <= get('sql').value.length });
+            get('btn-clear').click();
+            results.push({ name: 'clearing SQL also clears findings and their source actions',
+                pass: get('analysis-diagnostics').hidden &&
+                    get('analysis-diagnostic-list').children.length === 0 &&
+                    get('analysis-diagnostic-summary').textContent === '' &&
+                    get('diagnostic-val').textContent === '0' });
             get('opt-dialect').value = 'tsql';
             get('sql').value = [
                 'CREATE PROC dbo.rec_ui AS',
@@ -388,8 +572,106 @@
                 results.push({ name: 'delayed large input refreshes explicitly',
                     pass: get('mermaid-out').textContent !== delayedBefore &&
                         get('sql').value === delayedLargeSource });
-                finish(results);
+                reviewSourceOwnership();
             }, 500);
+            function reviewSourceOwnership() {
+                get('btn-report-clear').click();
+                get('btn-clear').click();
+                get('opt-scope').value = 'internal';
+                get('opt-dialect').value = 'tsql';
+                var ownerSource = 'CREATE PROC dbo.owner_first AS SELECT 1;\nGO\n' +
+                    'CREATE PROC dbo.owner_second AS BEGIN\nSELECT 2; END SELECT (3;';
+                get('sql').value = ownerSource;
+                get('sql').dispatchEvent(new Event('input'));
+                get('btn-draw').click();
+                get('opt-scope').value = 'dependencies';
+                get('opt-scope').dispatchEvent(new Event('change'));
+                var firstSource = get('sql').value;
+                var estateAction = d.querySelector('#analysis-diagnostic-list button[data-action="source"]');
+                if (estateAction)
+                    estateAction.click();
+                results.push({ name: 'an estate finding opens its owning object before selecting source',
+                    pass: !!estateAction && /owner_second/.test(get('sql').value) &&
+                        get('sql').value !== firstSource && get('sql').selectionEnd > get('sql').selectionStart });
+                get('object-select').selectedIndex = 0;
+                get('object-select').dispatchEvent(new Event('change'));
+                setTimeout(function () {
+                    var otherNode = Array.prototype.filter.call(d.querySelectorAll('#stage .node'), function (element) { return /owner_second/.test(element.textContent || ''); })[0];
+                    if (otherNode)
+                        otherNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                    var objectAction = d.querySelector('#flow-source-actions button[data-action="source"]');
+                    if (objectAction)
+                        objectAction.click();
+                    results.push({ name: 'a dependency node source action selects its own complete object',
+                        pass: !!otherNode && !!objectAction && /owner_second/.test(get('sql').value) &&
+                            get('sql').selectionStart === 0 && get('sql').selectionEnd === get('sql').value.length });
+                    get('sql').setSelectionRange(0, 0);
+                    get('sql').dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+                    var tabEdited = get('sql').value;
+                    if (objectAction)
+                        objectAction.click();
+                    results.push({ name: 'a stale source action cannot overwrite a Tab edit',
+                        pass: tabEdited.slice(0, 4) === '    ' && get('sql').value === tabEdited });
+                    get('report-text').value = rdlText;
+                    get('btn-report-apply').click();
+                    get('opt-scope').value = 'report';
+                    get('opt-scope').dispatchEvent(new Event('change'));
+                    var sqlBeforeReport = get('sql').value;
+                    var reportAction = d.querySelector('#analysis-diagnostic-list button[data-action="source"]');
+                    if (reportAction)
+                        reportAction.click();
+                    results.push({ name: 'a report finding selects report XML without replacing SQL',
+                        pass: !!reportAction && get('report-text').selectionEnd > get('report-text').selectionStart &&
+                            get('sql').value === sqlBeforeReport && get('report-menu').open });
+                    setTimeout(function () {
+                        var datasetNode = Array.prototype.filter.call(d.querySelectorAll('#stage .node'), function (element) { return /Students/.test(element.textContent || ''); })[0];
+                        if (datasetNode)
+                            datasetNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                        var datasetAction = d.querySelector('#flow-source-actions button[data-action="source"]');
+                        if (datasetAction)
+                            datasetAction.click();
+                        var selectedXml = get('report-text').value.slice(get('report-text').selectionStart, get('report-text').selectionEnd);
+                        results.push({ name: 'a report dataset node opens its XML evidence',
+                            pass: !!datasetNode && !!datasetAction && /DataSet Name="Students"/.test(selectedXml) &&
+                                get('sql').value === sqlBeforeReport });
+                        var unappliedReport = '<!--unapplied edit-->\n' + get('report-text').value;
+                        get('report-text').value = unappliedReport;
+                        get('report-text').setSelectionRange(0, 0);
+                        if (datasetAction)
+                            datasetAction.click();
+                        results.push({ name: 'unapplied report edits suppress stale XML navigation without replacement',
+                            pass: !!datasetAction && get('report-text').value === unappliedReport &&
+                                get('report-text').selectionStart === 0 && get('report-text').selectionEnd === 0 });
+                        var columnNode = Array.prototype.filter.call(d.querySelectorAll('#stage .node'), function (element) { return /^StudentId$/.test((element.textContent || '').trim()); })[0];
+                        if (columnNode)
+                            columnNode.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+                        results.push({ name: 'report column spans without a recorded dataset owner have no source action',
+                            pass: !!columnNode && d.querySelectorAll('#flow-source-actions button[data-action="source"]').length === 0 });
+                        frame.style.width = '671px';
+                        frame.style.height = '404px';
+                        results.push({ name: 'the stacked diagram toolbar scrolls without covering evidence',
+                            pass: w.getComputedStyle(d.querySelector('.output-head')).position === 'static' });
+                        results.push({ name: 'report controls wrap without page-level horizontal overflow',
+                            pass: d.documentElement.scrollWidth <= w.innerWidth,
+                            detail: { width: w.innerWidth, scrollWidth: d.documentElement.scrollWidth } });
+                        var overflowProbe = d.createElement('div');
+                        overflowProbe.style.cssText = 'position:absolute;left:0;width:3000px;height:1px';
+                        get('canvas').appendChild(overflowProbe);
+                        if (columnNode)
+                            columnNode.focus();
+                        get('canvas').scrollLeft = 200;
+                        if (columnNode)
+                            columnNode.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                        results.push({ name: 'keyboard focus cannot scroll the diagram inspector outside its canvas',
+                            pass: !!columnNode && get('canvas').scrollLeft === 0 &&
+                                get('flow-inspector').getBoundingClientRect().left >=
+                                    get('canvas').getBoundingClientRect().left,
+                            detail: { scrollLeft: get('canvas').scrollLeft } });
+                        overflowProbe.remove();
+                        finish(results);
+                    }, 700);
+                }, 700);
+            }
         }, 1200);
     }
 })();

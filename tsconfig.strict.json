@@ -9,7 +9,11 @@
   "files": [
     "src/types.d.ts",
     "src/analysis/confidence.ts",
-    "src/ui/large-input.ts"
+    "src/ui/large-input.ts",
+    "src/ui/flow-diagram.ts",
+    "src/ui/diagnostics.ts",
+    "src/ui/lesson-picker.ts",
+    "src/ui/erd-view.ts"
   ],
   "include": []
 }

@@ -34,6 +34,12 @@
     <button class="btn" id="btn-erd-import">Import DDL</button>
     <button class="btn" id="btn-erd-sample">T-SQL sample</button>
     <button class="btn" id="btn-erd-sample-db2">DB2 sample</button>
+    <details class="guided-lesson-menu" id="guided-lesson-menu">
+      <summary class="btn">Guided lessons</summary>
+      <div class="guided-lesson-list" role="group" aria-label="Choose a schema lesson">
+        <button type="button" data-guided-lesson="schema-join">Understand a schema join</button>
+      </div>
+    </details>
   </div>
 </header>
 
@@ -63,10 +69,13 @@
           <div class="health-item"><span>Columns</span><b id="erd-columns">0</b></div>
           <div class="health-item"><span>Relations</span><b id="erd-relationships">0</b></div>
           <div class="health-item"><span>Unresolved</span><b id="erd-unresolved">0</b></div>
-          <div class="health-item"><span>Diagnostics</span><b id="erd-diagnostics">0</b></div>
+          <div class="health-item"><span>Diagnostics</span><b id="erd-diagnostic-count">0</b></div>
         </div>
       </div>
-      <div class="msg" id="erd-msg"></div>
+      <details class="diagnostic-panel" id="erd-diagnostics" hidden>
+        <summary id="erd-diagnostic-summary" aria-live="polite"></summary>
+        <ul class="diagnostic-list" id="erd-diagnostic-list"></ul>
+      </details>
     </div>
   </section>
 
@@ -204,6 +213,18 @@
   </section>
 </main>
 
+<section class="lesson-panel erd-lesson-panel" id="guided-lesson-panel" aria-labelledby="guided-lesson-title" hidden>
+  <div><h2 id="guided-lesson-title">Guided lesson</h2><button class="btn" id="guided-lesson-close" type="button">Close lesson</button></div>
+  <p id="guided-lesson-goal"></p><ol id="guided-lesson-steps"></ol>
+</section>
+
+<dialog class="lesson-confirm" id="lesson-confirm" aria-labelledby="lesson-confirm-title">
+  <h2 id="lesson-confirm-title">Replace the current DDL?</h2>
+  <p>Your editor contents will be replaced by the selected lesson.</p>
+  <div><button class="btn" id="lesson-confirm-cancel" type="button">Keep my DDL</button>
+    <button class="btn primary" id="lesson-confirm-apply" type="button">Replace and open lesson</button></div>
+</dialog>
+
 <footer>Declared constraints only — relationships come from PRIMARY KEY / UNIQUE / FOREIGN KEY declarations in the DDL, never inferred from queries. Unresolved references stay explicit.</footer>
 
 <script src="dist/src/tokenizer.js"></script>
@@ -216,9 +237,12 @@
 <script src="dist/src/ui/large-input.js"></script>
 <script src="dist/src/ui/splitter.js"></script>
 <script src="dist/src/ui/clipboard.js"></script>
+<script src="dist/src/ui/diagnostics.js"></script>
+<script src="dist/src/ui/lesson-picker.js"></script>
 <script src="dist/src/ui/erd-query-view.js"></script>
 <script src="dist/src/ui/erd-query.js"></script>
 <script src="dist/src/samples.js"></script>
+<script src="dist/src/ui/erd-view.js"></script>
 <script src="dist/src/ui/erd-page.js"></script>
 </body>
 </html>

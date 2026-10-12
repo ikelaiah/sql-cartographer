@@ -15,6 +15,8 @@ This page is the map. Start with the row that matches you.
 | Understand a diagram | [USER_GUIDE.md — Reading the diagram](USER_GUIDE.md#reading-the-diagram) |
 | Build SQL from a schema | [QUERY_BUILDER.md](QUERY_BUILDER.md) |
 | Contribute | [CONTRIBUTING.md](../CONTRIBUTING.md) → [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Review the v3.2.0 release | [release evidence](releases/v3.2.0.md) → [browser review](plans/v3.2.0-review.md) → [delivery checklist](../tasks/todo.md) |
+| Plan the next releases | [v3.3.0–v5.0.0 roadmap](plans/v3.3.0-to-v5.0.0.md) → [v3.3.0 plan](../tasks/v3.3.0-plan.md) → [checklist](../tasks/v3.3.0-todo.md) |
 
 ## Guides
 
@@ -47,6 +49,8 @@ This page is the map. Start with the row that matches you.
 - [ARCHITECTURE.md](ARCHITECTURE.md) — the pipeline, the module boundaries and
   load-order contract, the graph vocabulary, and the design invariants.
 - [RELEASES.md](RELEASES.md) — the release flow and the canonical note index.
+- [v3.3.0–v5.0.0 roadmap](plans/v3.3.0-to-v5.0.0.md) — bounded release scope,
+  dependencies, effort, qualification, and conditional major-version decisions.
 
 ## Decisions
 
@@ -68,6 +72,8 @@ Architecture Decision Records capture *why*, not *what*. Read
   *ProcFlow* on purpose. See [archive/README.md](archive/README.md).
 - [ROADMAP.md](../ROADMAP.md) — the v1.x / v2.0 accuracy workstreams. **Historical**;
   all of it shipped.
+- The previous v2.0.0 qualification [plan](archive/v2.0.0-qualification-plan.md)
+  and [task list](archive/v2.0.0-qualification-tasks.md) are preserved in the archive.
 
 ## Conventions
 
