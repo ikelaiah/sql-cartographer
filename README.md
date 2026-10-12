@@ -168,7 +168,9 @@ learning path for users, contributors, and reviewers.
   local qualification evidence. The public tag and runtime release are pending.
 - [v3.2.0 specification](docs/plans/v3.2.0.md) and
   [implementation checklist](tasks/todo.md) — scope and delivery record.
-- [Roadmap](ROADMAP.md) — the historical v1.x / v2.0 accuracy workstreams,
+- [Release roadmap](docs/plans/v3.3.0-to-v5.0.0.md) — realistic v3.3.0–v5.0.0
+  scope, effort, release gates, and conditional major-version decisions.
+- [Historical roadmap](ROADMAP.md) — the v1.x / v2.0 accuracy workstreams,
   all shipped.
 
 ## Contributing
