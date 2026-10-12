@@ -213,7 +213,12 @@
             pick('DBO.ORDERHEADER', 'PlacedAt');
             await wait(120);
             /* ---- resize ---- */
-            var floatRect = get('qb-float').getBoundingClientRect();
+            var queryWindow = get('qb-float');
+            /* Give the gesture room to grow at different browser/font metrics. */
+            queryWindow.style.maxHeight = 'none';
+            queryWindow.style.width = '400px';
+            queryWindow.style.height = '320px';
+            var floatRect = queryWindow.getBoundingClientRect();
             var grip = get('qb-resize');
             var gripRect = grip.getBoundingClientRect();
             grip.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0,
@@ -222,7 +227,8 @@
                 clientX: gripRect.left + 90, clientY: gripRect.top + 70, pointerId: 7 }));
             grip.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 7 }));
             var grownRect = get('qb-float').getBoundingClientRect();
-            record('pointer resize grows the window', grownRect.width > floatRect.width + 50 && grownRect.height > floatRect.height + 30);
+            record('pointer resize grows the window', grownRect.width > floatRect.width + 50 && grownRect.height > floatRect.height + 30, { before: { width: floatRect.width, height: floatRect.height },
+                after: { width: grownRect.width, height: grownRect.height } });
             grip.focus();
             grip.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft', bubbles: true }));
             record('keyboard resize shrinks the window', get('qb-float').getBoundingClientRect().width < grownRect.width);
