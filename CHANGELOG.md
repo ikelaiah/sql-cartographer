@@ -4,6 +4,19 @@ All notable SQL Cartographer release changes are recorded here. Candidate
 entries identify their publication state. Detailed verification evidence lives
 in the canonical note under `docs/releases/`.
 
+## v3.2.1 — Free canvas panning
+
+Released 13 October 2026. Details in
+[docs/releases/v3.2.1.md](docs/releases/v3.2.1.md).
+
+### Fixed
+
+- Allow ERD canvas panning right/down from the top/left origin and beyond
+  diagram bounds in every direction. Fit recentres the schema or selected
+  neighbourhood; cursor-anchored zoom accounts for the pan offset.
+- Keep SQL Flow drags from becoming node clicks that reframe the diagram.
+  Diagram controls remain usable while panning, and Fit overview recovers the view.
+
 ## v3.2.0 — Clear diagrams and guided exploration
 
 Released 13 October 2026. Qualification and browser review evidence in

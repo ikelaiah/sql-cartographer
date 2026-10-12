@@ -1,6 +1,6 @@
 # Accuracy and analysis contract
 
-SQL Cartographer v3.2.0 is the current release target. It is a deterministic
+SQL Cartographer v3.2.1 is the current release target. It is a deterministic
 heuristic analyser, not a database compiler, and does not execute SQL. Diagrams
 are investigation aids: verify material findings against the source and the
 target database.
@@ -42,7 +42,7 @@ SQL into a resolved dependency.
 
 ## Fixture evidence
 
-The v3.2.0 release snapshot is [metrics-v3.2.0.json](metrics-v3.2.0.json). It covers
+The v3.2.1 release snapshot is [metrics-v3.2.1.json](metrics-v3.2.1.json). It covers
 the historical golden and fuzz corpus, browser interaction, parity, layout,
 workspace, catalogue, column, column-flow, report, and report-graph suites.
 The v1.14 scale suite exercises 100 KB and 500 KB inputs, 100-object estates,

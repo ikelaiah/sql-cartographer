@@ -24,7 +24,8 @@
         return !!(decoration && decoration.active && decoration.teaching);
     }
     var findMatches = [], findIndex = 0;
-    var panning = false, panStartX = 0, panStartY = 0, panStartScrollLeft = 0, panStartScrollTop = 0, didPan = false;
+    var panning = false, panStartX = 0, panStartY = 0, panStartViewX = 0, panStartViewY = 0, didPan = false;
+    var panOffsetX = 0, panOffsetY = 0;
     var dragMode = null, dragCardId = null, dragBaseX = 0, dragBaseY = 0, dragLastDx = 0, dragLastDy = 0;
     var cardPositions = {};
     var cardSizes = {};
@@ -463,15 +464,29 @@
     }
     /* Card positions are absolute canvas pixels at 100%; zoom scales the whole
        stage with a transform, so it never reflows while zooming. A spacer
-       carries the scaled scroll area. */
-    function applyZoomLayout() {
+       carries the scaled scroll area. Positive viewport offsets leave space
+       before the diagram, so dragging right/down is not clamped at scroll zero. */
+    function applyZoomLayout(scrollX = canvas ? canvas.scrollLeft : 0, scrollY = canvas ? canvas.scrollTop : 0) {
         if (!canvas || !cardsHost || !space)
             return;
         var zoom = currentZoom();
-        var width = Math.ceil(cardsHost.offsetWidth * zoom) + 40;
-        var height = Math.ceil(cardsHost.offsetHeight * zoom) + 40;
-        space.style.width = Math.max(width, canvas.clientWidth) + 'px';
-        space.style.height = Math.max(height, canvas.clientHeight) + 'px';
+        var width = Math.ceil(cardsHost.offsetWidth * zoom) + 40 + panOffsetX;
+        var height = Math.ceil(cardsHost.offsetHeight * zoom) + 40 + panOffsetY;
+        cardsHost.style.left = panOffsetX + 'px';
+        cardsHost.style.top = panOffsetY + 'px';
+        space.style.width = Math.max(width, canvas.clientWidth + scrollX) + 'px';
+        space.style.height = Math.max(height, canvas.clientHeight + scrollY) + 'px';
+    }
+    function setCanvasPan(x, y) {
+        if (!canvas)
+            return;
+        panOffsetX = Math.max(0, x);
+        panOffsetY = Math.max(0, y);
+        var scrollX = Math.max(0, -x), scrollY = Math.max(0, -y);
+        applyZoomLayout(scrollX, scrollY);
+        canvas.scrollLeft = scrollX;
+        canvas.scrollTop = scrollY;
+        scheduleOverlay();
     }
     function setZoom(value) {
         if (!canvas)
@@ -495,11 +510,10 @@
             return;
         var rect = canvas.getBoundingClientRect();
         var offsetX = clientX - rect.left, offsetY = clientY - rect.top;
-        var logicalX = (canvas.scrollLeft + offsetX) / from;
-        var logicalY = (canvas.scrollTop + offsetY) / from;
+        var logicalX = (canvas.scrollLeft + offsetX - panOffsetX) / from;
+        var logicalY = (canvas.scrollTop + offsetY - panOffsetY) / from;
         setZoom(to);
-        canvas.scrollLeft = logicalX * to - offsetX;
-        canvas.scrollTop = logicalY * to - offsetY;
+        setCanvasPan(offsetX - logicalX * to, offsetY - logicalY * to);
     }
     function zoomBy(factor) {
         if (!canvas)
@@ -532,9 +546,10 @@
         var from = currentZoom();
         var to = Math.max(ERD_MIN_ZOOM, Math.min(ERD_MAX_ZOOM, from * Math.min(canvas.clientWidth / width, canvas.clientHeight / height)));
         var ratio = to / from;
+        var centerX = (minX + maxX) / 2 - panOffsetX;
+        var centerY = (minY + maxY) / 2 - panOffsetY;
         setZoom(to);
-        canvas.scrollLeft = (minX + maxX) / 2 * ratio - canvas.clientWidth / 2;
-        canvas.scrollTop = (minY + maxY) / 2 * ratio - canvas.clientHeight / 2;
+        setCanvasPan(canvas.clientWidth / 2 - centerX * ratio, canvas.clientHeight / 2 - centerY * ratio);
     }
     /* v2.3.0 — port-anchored orthogonal routing. Edges leave the card at the row
        of the referenced column and travel in the gutter between columns, with a
@@ -1205,22 +1220,22 @@
        the threshold never suppresses the click, and a real drag always does. */
     if (canvas) {
         canvas.addEventListener('pointerdown', function (event) {
+            didPan = false;
             if (event.button !== 0)
                 return;
             var target = event.target;
-            if (target && target.closest && target.closest('.qb-pick'))
+            if (target && target.closest && target.closest('button,input,select,textarea,a,summary,.qb-float,.erd-inspector'))
                 return;
             var cardEl = target && target.closest ? target.closest('.erd-card') : null;
             dragMode = cardEl ? 'card' : 'pan';
             dragCardId = cardEl ? cardEl.getAttribute('data-entity-id') : null;
             panning = true;
-            didPan = false;
             dragLastDx = 0;
             dragLastDy = 0;
             panStartX = event.clientX;
             panStartY = event.clientY;
-            panStartScrollLeft = canvas.scrollLeft;
-            panStartScrollTop = canvas.scrollTop;
+            panStartViewX = panOffsetX - canvas.scrollLeft;
+            panStartViewY = panOffsetY - canvas.scrollTop;
             if (dragMode === 'card' && dragCardId) {
                 var position = cardPositions[dragCardId] || { x: 0, y: 0 };
                 dragBaseX = position.x;
@@ -1251,8 +1266,8 @@
             }
             if (Math.abs(dx) > 6 || Math.abs(dy) > 6)
                 didPan = true;
-            canvas.scrollLeft = panStartScrollLeft - dx;
-            canvas.scrollTop = panStartScrollTop - dy;
+            if (didPan)
+                setCanvasPan(panStartViewX + dx, panStartViewY + dy);
         });
         var endDrag = function () {
             if (!panning)
