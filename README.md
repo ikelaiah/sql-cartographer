@@ -22,7 +22,7 @@ connection, sign-in, or installation is required.
 > database compiler. Treat diagrams as investigation aids and verify important
 > findings against the source SQL and target database.
 
-> **Trust model:** The v3.2.0 release candidate asserts semantic relationships only
+> **Trust model:** The v3.2.0 release asserts semantic relationships only
 > where static evidence supports them. Dynamic and ambiguous regions stay explicit.
 > See [Accuracy](docs/ACCURACY.md) and the [v2 accuracy contract](docs/V2_ACCURACY_CONTRACT.md).
 
@@ -48,7 +48,7 @@ connection, sign-in, or installation is required.
 
 ## Quick start
 
-1. Download the `v3.1.0` runtime ZIP from the [latest published GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.1.0), or clone this repository.
+1. Download the `v3.2.0` runtime ZIP from the [GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.2.0), or clone this repository.
 2. Open `index.html` in a current Chromium, Firefox, or Edge browser.
 3. Paste SQL or import local files, select a dialect or **Auto**, and choose
    **Refresh**.
@@ -123,7 +123,7 @@ in the browser.
 
 ## Supported dialects
 
-SQL Cartographer v3.1.0 supports Microsoft T-SQL, IBM DB2 SQL PL, PostgreSQL
+SQL Cartographer v3.2.0 supports Microsoft T-SQL, IBM DB2 SQL PL, PostgreSQL
 PL/pgSQL, and SQLite. Detection is automatic but can be overridden. Vendor
 extensions outside these tested constructs may produce diagnostics or reduced
 coverage; see [Accuracy](docs/ACCURACY.md).
@@ -163,9 +163,8 @@ learning path for users, contributors, and reviewers.
   are explicit, versioned, and fingerprint-pruned.
 - [ADR-003](docs/decisions/ADR-003-aggregates-derive-group-by.md) — why
   aggregates derive their `GROUP BY` from the remaining picks.
-- [v3.1.0 release note](docs/releases/v3.1.0.md) — current release details.
-- [v3.2.0 release candidate](docs/releases/v3.2.0.md) — implementation and
-  local qualification evidence. The public tag and runtime release are pending.
+- [v3.2.0 release note](docs/releases/v3.2.0.md) — current release details and
+  [browser review](docs/plans/v3.2.0-review.md).
 - [v3.2.0 specification](docs/plans/v3.2.0.md) and
   [implementation checklist](tasks/todo.md) — scope and delivery record.
 - [Release roadmap](docs/plans/v3.3.0-to-v5.0.0.md) — realistic v3.3.0–v5.0.0

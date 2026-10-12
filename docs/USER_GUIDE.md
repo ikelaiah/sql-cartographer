@@ -27,9 +27,9 @@ SSRS/RDL report definition and renders an explorable diagram.
 
 ## First run
 
-1. Download the v3.2.0 runtime ZIP from the repository release, or clone the
-   repository for development. While the release tag is pending, run the
-   release candidate from its checkout. The latest published runtime is v3.1.0.
+1. Download the v3.2.0 runtime ZIP from the
+   [GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.2.0),
+   or clone the repository for development.
 2. Open `index.html` in a current Chromium, Firefox, or Edge browser. The
    runtime does not require a server or a database connection.
 3. Paste SQL, choose **Auto** or a dialect, and select **Refresh**.

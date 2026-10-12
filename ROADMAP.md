@@ -12,8 +12,8 @@
 > [CHANGELOG.md](CHANGELOG.md) and [docs/RELEASES.md](docs/RELEASES.md) for
 > what shipped. The v3.2.0 implementation and local qualification are recorded
 > in [docs/releases/v3.2.0.md](docs/releases/v3.2.0.md), against the
-> [specification](docs/plans/v3.2.0.md) and [checklist](tasks/todo.md). The
-> public tag and release publication remain pending.
+> [specification](docs/plans/v3.2.0.md) and [checklist](tasks/todo.md), with
+> [browser review evidence](docs/plans/v3.2.0-review.md).
 
 ## Contents
 

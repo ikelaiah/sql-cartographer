@@ -1,0 +1,144 @@
+{
+  "reviewDate": "2026-10-13",
+  "browser": {
+    "protocolVersion": "1.3",
+    "product": "Edg/155.0.4283.45",
+    "revision": "@50f24ef2aa5369a074b8888b7db82d9c0652d642",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/155.0.0.0 Safari/537.36 Edg/155.0.0.0",
+    "jsVersion": "15.5.9.4"
+  },
+  "zoom": "Edge Page zoom 200%; no CSS zoom or viewport emulation; debugger focus emulation enabled",
+  "observations": [
+    {
+      "scenario": "branch",
+      "theme": "light",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "cssZoom": "1",
+      "toolbarPosition": "static",
+      "nodes": 7,
+      "keyboardInspector": {
+        "visible": true,
+        "title": "@requested <= 0"
+      },
+      "sourceNavigation": true
+    },
+    {
+      "scenario": "branch",
+      "theme": "dark",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "cssZoom": "1",
+      "toolbarPosition": "static",
+      "nodes": 7,
+      "keyboardInspector": {
+        "visible": true,
+        "title": "@requested <= 0"
+      },
+      "sourceNavigation": true
+    },
+    {
+      "scenario": "lesson cancellation",
+      "preservedInput": true
+    },
+    {
+      "scenario": "temp-flow",
+      "theme": "light",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "cssZoom": "1",
+      "toolbarPosition": "static",
+      "nodes": 4,
+      "keyboardInspector": {
+        "visible": true,
+        "title": "SELECT … INTO #ActiveCustomer"
+      },
+      "sourceNavigation": true
+    },
+    {
+      "scenario": "procedure",
+      "theme": "light",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "cssZoom": "1",
+      "toolbarPosition": "static",
+      "nodes": 31,
+      "keyboardInspector": {
+        "visible": true,
+        "title": "SET NOCOUNT ON\nDECLARE @StudentId, @Processed"
+      },
+      "sourceNavigation": true
+    },
+    {
+      "scenario": "report",
+      "theme": "light",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "cssZoom": "1",
+      "toolbarPosition": "static",
+      "nodes": 5,
+      "xmlNavigation": true
+    },
+    {
+      "scenario": "schema lesson",
+      "theme": "light",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "tables": 3
+    },
+    {
+      "scenario": "schema lesson",
+      "theme": "dark",
+      "viewport": {
+        "width": 671,
+        "height": 404,
+        "dpr": 2
+      },
+      "horizontalOverflow": false,
+      "tables": 3
+    },
+    {
+      "scenario": "long ERD names",
+      "completeName": true,
+      "horizontalOverflow": false
+    },
+    {
+      "scenario": "keyboard schema query",
+      "theme": "dark",
+      "viewport": {"width": 671, "height": 404, "dpr": 2},
+      "keyboard": "Enter opens query mode; Space picks Customer.Name and OrderLine.ProductName",
+      "pickedColumns": 2,
+      "declaredJoins": 2,
+      "bridge": "dbo.OrderHeader",
+      "rowRepetitionWarning": true,
+      "horizontalOverflow": false,
+      "queryWindowBounds": {"left": 8, "top": 102.5, "right": 655.5, "bottom": 401.453125}
+    }
+  ],
+  "exceptions": [],
+  "remoteRequests": []
+}

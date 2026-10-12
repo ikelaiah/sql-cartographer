@@ -4,11 +4,10 @@ All notable SQL Cartographer release changes are recorded here. Candidate
 entries identify their publication state. Detailed verification evidence lives
 in the canonical note under `docs/releases/`.
 
-## v3.2.0 — Clear diagrams and guided exploration (release candidate)
+## v3.2.0 — Clear diagrams and guided exploration
 
-Local implementation and automated qualification evidence in
-[docs/releases/v3.2.0.md](docs/releases/v3.2.0.md). The manual 200% zoom review,
-public tag, and runtime release are pending.
+Released 13 October 2026. Qualification and browser review evidence in
+[docs/releases/v3.2.0.md](docs/releases/v3.2.0.md).
 
 ### Changed
 
@@ -25,6 +24,15 @@ public tag, and runtime release are pending.
   modules. Add a contributor path from a lesson through analysis to export.
 - Strip temporary focus classes and accessibility state from downloaded SVG
   copies while preserving the selected view on screen.
+
+### Fixed
+
+- Resolve dependency and diagnostic offsets in the owning SQL object, report
+  XML, or catalogue input. Suppress report-column actions without a known owner.
+- Protect edited SQL and unapplied auxiliary input from stale source actions;
+  Tab edits invalidate old analysis, and clearing SQL clears old diagnostics.
+- Keep zoomed controls in normal page flow, wrap report menus, and prevent
+  keyboard focus from scrolling the flow inspector outside the canvas.
 
 ## v3.1.0 — Documentation, diagrams, and maintainability
 

@@ -1,7 +1,8 @@
 # SQL Cartographer v3.2.0 task checklist
 
-**Status:** Implementation is delivered and local automated gates pass. The
-manual 200% browser-zoom review and public Git release remain pending.
+**Status:** v3.2.0 implementation, browser review, and release qualification
+completed on 13 October 2026. Historical baseline and human usability evidence
+limits are recorded below and in the review sheet.
 
 **Read first:** [Release specification](../docs/plans/v3.2.0.md) and
 [implementation plan](plan.md).
@@ -191,7 +192,8 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
 ### Checkpoint D — Learning
 
 - [x] Four lessons demonstrate their evidence, protect current input, and
-  lead a reviewer through the intended journey in five minutes.
+  lead through the intended journey. Browser/fixture checks cover the actions;
+  first-time-user completion time was not measured.
 
 ## 14. Keep exports clean and complete
 
@@ -207,7 +209,7 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
 
 ## 15. Review keyboard access and responsive layouts
 
-- [ ] Complete pointer/keyboard parity and layout review on both pages.
+- [x] Complete pointer/keyboard parity and layout review on both pages.
   - Acceptance: Visible focus, labels, predictable close/Escape, and source
     actions work without a pointer. Both themes, 200% zoom, and 768-pixel
     stacked views keep controls reachable without page overflow.
@@ -217,9 +219,10 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
   - Files: `styles.css`, `index.html`, `erd.html`, `tests/ui-tests.ts`,
     `tests/erd-ui.ts`; split controller fixes into page-specific slices.
   - Size: Medium per page.
-  - Remaining: The 200% browser-zoom walkthrough could not be run here. The
-    automated suites cover Enter activation, Escape cancellation, and the
-    source/navigation flows; screenshots cover both themes and responsive views.
+  - Evidence: Actual Edge Page zoom 200% was reviewed in both themes, using
+    debugger keyboard events and focus emulation. Flow source/XML navigation
+    and ERD keyboard query picks worked. Toolbar/menu/native-scroll findings
+    were fixed; UI 67/67 and ERD UI 74/74 pass. This is not an OS keyboard study.
 
 ## 16. Document the contributor's reading path
 
@@ -249,7 +252,7 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
 
 ## 18. Record experience evidence
 
-- [ ] Complete the before/after review sheet and walkthrough results.
+- [x] Complete the review sheet and walkthrough results with stated limits.
   - Acceptance: R1–R5 have observable evidence; record legibility/contrast,
     protected input, usability friction, and limits. Distinguish maintainer
     walkthroughs from any independent developer feedback.
@@ -258,16 +261,19 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
   - Dependencies: 17.
   - Files: `docs/plans/v3.2.0-review.md` and a bounded set of `docs/assets/` images.
   - Size: Small per scenario.
-  - Remaining: Before images are approximate v3.1.0 references, not paired
+  - Limits: Before images are approximate v3.1.0 references, not paired
     captures of all five fixtures. A timed first-time-user walkthrough and
-    independent developer feedback remain outstanding.
+    independent human developer feedback were not collected. A separate AI
+    code review approved the release fixes; it is not a usability study.
 
 ### Checkpoint E — Ready to prepare the release
 
-- [ ] R1–R5 pass, exports/saved files work, strict helpers and packaging pass,
+- [x] R1–R5 have recorded browser/fixture evidence, exports/saved files work,
+  strict helpers and packaging pass,
   and recorded review has no unresolved release blocker.
-  - Remaining: Local code and package gates pass. The 200% browser-zoom review
-    and timed first-time-user walkthrough are not complete.
+  - Evidence: Local code/package gates and actual 200% browser zoom pass.
+    Approximate before references and absent timed/human usability evidence
+    remain explicit limits; no usability validation claim is made.
 
 ## 19. Promote version metadata and metrics
 
@@ -283,7 +289,7 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
 
 ## 20. Write canonical release evidence
 
-- [x] Add the candidate release note and refresh current release documentation.
+- [x] Add the release note and refresh current release documentation.
   - Acceptance: Link verification/experience evidence; record changed
     interactions and limits; claim only completed features. Current references
     agree with package versions.
@@ -296,7 +302,7 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
 
 ## 21. Run final release qualification
 
-- [ ] Complete local qualification and finish the repository release flow.
+- [x] Complete local qualification and finish the repository release flow.
   - Acceptance: Every command passes; commit built `dist/` with the release
     changeset; the archive/checksum match the qualified runtime. PR/CI/tag and
     publication follow the authorised repository release flow.
@@ -318,13 +324,15 @@ wiring, tests, and guide updates. Use the existing browser suite runner.
   - Files: `docs/releases/v3.2.0.md`, `docs/plans/v3.2.0-review.md`;
     generated runtime/release artifacts follow the existing release flow.
   - Size: Small; fix failures in focused slices and rerun affected gates.
-  - Local gates pass, package smoke passes, and the ZIP/checksum are prepared.
-    Git commit, tag, and publication remain pending because `.git` is read-only
-    in this workspace. The manual 200% zoom review is also open.
+  - Local gates pass, package smoke passes, and the actual 200% browser review
+    is complete. The release note records the qualified ZIP/checksum.
+    PR #32 carries the complete release changeset; publication follows the
+    annotated release tag and uploaded-asset digest check.
 
 ### Checkpoint F — Release complete
 
-- [ ] Required outcomes are implemented/qualified, metadata/evidence agree,
+- [x] Required outcomes are implemented/qualified, metadata/evidence agree,
   and any authorised publication is verified.
-  - Remaining: This workspace cannot write Git metadata. The local commit,
-    annotated tag, and public runtime release have not been created.
+  - Publication: [v3.2.0](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.2.0)
+    contains the runtime ZIP and SHA-256 checksum. The historical baseline
+    gaps in task 01/checkpoint A remain recorded rather than reconstructed.

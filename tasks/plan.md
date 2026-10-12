@@ -1,7 +1,7 @@
 # Implementation plan: SQL Cartographer v3.2.0
 
-**Status:** Implementation complete; local automated qualification passed.
-The manual 200% zoom review and public release remain pending.
+**Status:** Implementation, actual 200% browser review, and local release
+qualification completed on 13 October 2026. See the release checklist.
 
 **Theme:** Clear diagrams and guided exploration.
 
@@ -140,6 +140,7 @@ navigation, or compatibility.
 
 The maintainer review chose the inspector placement, reading-scale policy,
 and four lessons during implementation. The review sheet records the
-approximate before references and the remaining 200% zoom and independent
-review limits. The local package is ready; commit, tag, and public publication
-are pending because Git metadata is read-only in this workspace.
+approximate before references, completed actual 200% browser walkthrough,
+and the remaining human/timed usability evidence limits. Source navigation,
+stale-input protection, and zoom layout findings were fixed and qualified.
+The canonical release note records the archive and checksum.
