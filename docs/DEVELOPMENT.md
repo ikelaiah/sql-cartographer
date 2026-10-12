@@ -39,6 +39,27 @@ and open these pages:
 - `tests/firefox-smoke.html` — critical-path smoke used by the Firefox job; it
   loads both `index.html` and `erd.html`.
 
+### Follow one lesson through the code
+
+Use **Follow a decision** to trace the feature from data to exported output:
+
+1. Its local SQL and three inspection prompts live in
+   `SQL_CARTOGRAPHER_LESSONS.branch` in `src/samples.ts`.
+2. `src/app.ts`'s `run()` calls `analyse()` / `analyseEstate()` and retains the
+   result graph, diagnostics, and source spans.
+3. `src/ui/flow-diagram.ts` renders that graph, reads the selected
+   `GraphNode`'s provenance and connections, and exposes explicit navigation
+   callbacks. It does not analyse or alter graph facts.
+4. `src/exporters.ts`'s `toMermaid()` and `toDrawio()` serialize that graph and
+   provenance. The controller saves the rendered SVG from the same view.
+5. Extend the corresponding flow interaction in `tests/ui-tests.ts`; run
+   `npm test -- --suite ui` and `npm run build`.
+
+For schema cards and their selection inspector, start at `src/ui/erd-view.ts`;
+`src/ui/erd-page.ts` owns their state and layout callbacks. The ordered script
+lists in `index.html`, `erd.html`, and the runtime allowlist define how both
+views load.
+
 For a local run:
 
 ```text

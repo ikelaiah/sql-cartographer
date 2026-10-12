@@ -4,7 +4,10 @@
 > workstreams, all of which shipped. It predates the ERD, query builder, and
 > aggregate features (v2.1–v2.6) and is not the current plan. See
 > [CHANGELOG.md](CHANGELOG.md) and [docs/RELEASES.md](docs/RELEASES.md) for
-> what shipped.
+> what shipped. The v3.2.0 implementation and local qualification are recorded
+> in [docs/releases/v3.2.0.md](docs/releases/v3.2.0.md), against the
+> [specification](docs/plans/v3.2.0.md) and [checklist](tasks/todo.md). The
+> public tag and release publication remain pending.
 
 ## Contents
 

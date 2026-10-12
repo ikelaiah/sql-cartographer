@@ -1,7 +1,30 @@
 # Changelog
 
-All notable released SQL Cartographer changes are recorded here. Detailed verification
-evidence belongs in the canonical release note under `docs/releases/`.
+All notable SQL Cartographer release changes are recorded here. Candidate
+entries identify their publication state. Detailed verification evidence lives
+in the canonical note under `docs/releases/`.
+
+## v3.2.0 — Clear diagrams and guided exploration (release candidate)
+
+Local implementation and automated qualification evidence in
+[docs/releases/v3.2.0.md](docs/releases/v3.2.0.md). The manual 200% zoom review,
+public tag, and runtime release are pending.
+
+### Changed
+
+- Open flow diagrams at a reading scale with an explicit **Fit overview**.
+  Selecting a step frames its immediate modelled neighbours, highlights their
+  relationships, and can be cleared to restore the previous viewport.
+- Add a flow evidence inspector with provenance, resolution, source spans,
+  connection kinds, and explicit **Go to source** / **Open object** actions.
+- Share text-safe diagnostic lists across the flow and ERD pages, including
+  severity, code, scope, supported source actions, and code-specific hints.
+- Add three guided flow/query lessons and one three-table ERD join lesson.
+  Guided and representative samples ask before replacing non-empty SQL/DDL.
+- Extract flow presentation and ERD card/inspector builders into typed UI
+  modules. Add a contributor path from a lesson through analysis to export.
+- Strip temporary focus classes and accessibility state from downloaded SVG
+  copies while preserving the selected view on screen.
 
 ## v3.1.0 — Documentation, diagrams, and maintainability
 

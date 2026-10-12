@@ -4,6 +4,17 @@ type Dialect = 'tsql' | 'db2' | 'plpgsql' | 'sqlite';
 type DialectChoice = Dialect | 'auto';
 type DiagramDirection = 'TD' | 'LR';
 type DiagramMode = 'auto' | 'flow' | 'query';
+type GuidedLessonView = 'flow' | 'query' | 'erd';
+interface GuidedLesson {
+  id: string;
+  title: string;
+  goal: string;
+  dialect: Dialect;
+  view: GuidedLessonView;
+  source: string;
+  steps: string[];
+  showPanel?: boolean;
+}
 type DiagnosticSeverity = 'error' | 'warning' | 'info';
 type DiagnosticScope = 'document' | 'region';
 
@@ -96,6 +107,12 @@ interface Diagnostic {
   span: SourceSpan | null;
   scope?: DiagnosticScope;
 }
+
+declare function renderDiagnosticPanel(summary: HTMLElement,
+                                       details: HTMLDetailsElement,
+                                       list: HTMLElement,
+                                       diagnostics: Diagnostic[],
+                                       onSource: ((span: SourceSpan) => void) | null): void;
 
 type TokenType = 'word' | 'op' | 'str' | 'num' | 'dollar';
 

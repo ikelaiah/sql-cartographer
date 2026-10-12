@@ -1,5 +1,5 @@
 "use strict";
-/* sql-cartographer v3.1.0 — bundled demo sample SQL.
+/* sql-cartographer v3.2.0 — bundled demo sample SQL and guided lessons.
    (Role introduced v2.7.0; ERD schema samples moved here from src/erd.ts in
    v3.1.0 so algorithm modules stay free of data.)
 
@@ -317,4 +317,97 @@ var SQL_CARTOGRAPHER_ERD_SAMPLE_DB2 = [
     'CREATE VIEW sales.v_audit_recent (log_id, message, created_at) AS',
     '  SELECT log_id, message, created_at FROM sales.audit_log;'
 ].join('\n');
+/* v3.2.0 lessons are short, explicit local examples. Steps describe evidence
+   users can inspect in the current view; they do not make claims about SQL
+   that static analysis cannot establish. */
+var SQL_CARTOGRAPHER_LESSONS = {
+    branch: {
+        id: 'branch', title: 'Follow a decision',
+        goal: 'See how the IF/ELSE gate creates two possible branches in this procedure.',
+        dialect: 'tsql', view: 'flow',
+        source: [
+            'CREATE PROCEDURE dbo.CheckCapacity @capacity INT, @requested INT AS',
+            'BEGIN',
+            '  IF @requested <= 0',
+            '    PRINT \'Choose a positive amount\';',
+            '  ELSE IF @capacity >= @requested',
+            '    INSERT INTO dbo.Reservation (quantity) VALUES (@requested);',
+            '  ELSE',
+            '    PRINT \'Not enough capacity\';',
+            'END'
+        ].join('\n'),
+        steps: [
+            'Select the IF condition and read its source span.',
+            'Follow each outgoing control relationship to its branch.',
+            'Compare the INSERT branch with the two PRINT branches, then copy the Mermaid view to share the map.'
+        ]
+    },
+    'temp-flow': {
+        id: 'temp-flow', title: 'Follow data between steps',
+        goal: 'Separate possible control order from the temporary-table producer and consumer evidence.',
+        dialect: 'tsql', view: 'flow',
+        source: [
+            'CREATE PROCEDURE dbo.QueueActiveCustomers AS',
+            'BEGIN',
+            '  SELECT CustomerId INTO #ActiveCustomer',
+            '  FROM dbo.Customer WHERE IsActive = 1;',
+            '  INSERT INTO dbo.RetentionQueue (CustomerId)',
+            '  SELECT CustomerId FROM #ActiveCustomer;',
+            'END'
+        ].join('\n'),
+        steps: [
+            'Select the SELECT INTO node to inspect the temporary-table write.',
+            'Select the later INSERT to inspect its read and target.',
+            'Compare the data dependency with the control-order edges, then copy the Mermaid view when ready.'
+        ]
+    },
+    'query-pipeline': {
+        id: 'query-pipeline', title: 'Read a query pipeline',
+        goal: 'Follow named query steps from the first CTE to the final result.',
+        dialect: 'tsql', view: 'query',
+        source: [
+            'WITH ActiveOrders AS (',
+            '  SELECT OrderId, CustomerId FROM dbo.OrderHeader WHERE Status = \'OPEN\'',
+            '), CustomerTotals AS (',
+            '  SELECT CustomerId, COUNT(*) AS OrderCount',
+            '  FROM ActiveOrders GROUP BY CustomerId',
+            ')',
+            'SELECT CustomerId, OrderCount FROM CustomerTotals;'
+        ].join('\n'),
+        steps: [
+            'Start at the filtered ActiveOrders input.',
+            'Select CustomerTotals and inspect its incoming query dependency.',
+            'Trace CustomerTotals to the final SELECT, then copy the Mermaid view to share the pipeline.'
+        ]
+    },
+    'schema-join': {
+        id: 'schema-join', title: 'Understand a schema join',
+        goal: 'Build a declared join and see why one customer can produce several result rows.',
+        dialect: 'tsql', view: 'erd',
+        source: [
+            'CREATE TABLE dbo.Customer (',
+            '  CustomerId INT NOT NULL PRIMARY KEY,',
+            '  Name VARCHAR(80) NOT NULL',
+            ');',
+            'CREATE TABLE dbo.OrderHeader (',
+            '  OrderId INT NOT NULL PRIMARY KEY,',
+            '  CustomerId INT NOT NULL,',
+            '  CONSTRAINT FK_Order_Customer FOREIGN KEY (CustomerId)',
+            '    REFERENCES dbo.Customer (CustomerId)',
+            ');',
+            'CREATE TABLE dbo.OrderLine (',
+            '  OrderId INT NOT NULL, LineNo INT NOT NULL,',
+            '  ProductName VARCHAR(80) NOT NULL,',
+            '  CONSTRAINT PK_OrderLine PRIMARY KEY (OrderId, LineNo),',
+            '  CONSTRAINT FK_Line_Order FOREIGN KEY (OrderId)',
+            '    REFERENCES dbo.OrderHeader (OrderId)',
+            ');'
+        ].join('\n'),
+        steps: [
+            'Read the CustomerId and OrderId foreign-key lines to confirm declared joins.',
+            'Open Query Builder and select Customer.Name with OrderLine.ProductName.',
+            'Inspect the join explanation for repeated rows, then use Copy SQL to copy the generated statement.'
+        ]
+    }
+};
 //# sourceMappingURL=samples.js.map

@@ -15,6 +15,7 @@ This page is the map. Start with the row that matches you.
 | Understand a diagram | [USER_GUIDE.md — Reading the diagram](USER_GUIDE.md#reading-the-diagram) |
 | Build SQL from a schema | [QUERY_BUILDER.md](QUERY_BUILDER.md) |
 | Contribute | [CONTRIBUTING.md](../CONTRIBUTING.md) → [DEVELOPMENT.md](DEVELOPMENT.md) |
+| Review the v3.2.0 release candidate | [release evidence](releases/v3.2.0.md) → [specification](plans/v3.2.0.md) → [delivery checklist](../tasks/todo.md) |
 
 ## Guides
 
@@ -68,6 +69,8 @@ Architecture Decision Records capture *why*, not *what*. Read
   *ProcFlow* on purpose. See [archive/README.md](archive/README.md).
 - [ROADMAP.md](../ROADMAP.md) — the v1.x / v2.0 accuracy workstreams. **Historical**;
   all of it shipped.
+- The previous v2.0.0 qualification [plan](archive/v2.0.0-qualification-plan.md)
+  and [task list](archive/v2.0.0-qualification-tasks.md) are preserved in the archive.
 
 ## Conventions
 

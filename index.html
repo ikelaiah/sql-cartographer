@@ -35,6 +35,14 @@
     <input id="file-input" type="file" accept=".sql,.ddl,.txt,text/plain" multiple hidden>
     <button class="btn" id="btn-import">Import SQL files</button>
     <button class="btn" id="btn-sample">Load sample</button>
+    <details class="guided-lesson-menu" id="guided-lesson-menu">
+      <summary class="btn">Guided lessons</summary>
+      <div class="guided-lesson-list" role="group" aria-label="Choose a flow or query lesson">
+        <button type="button" data-guided-lesson="branch">Follow a decision</button>
+        <button type="button" data-guided-lesson="temp-flow">Follow data between steps</button>
+        <button type="button" data-guided-lesson="query-pipeline">Read a query pipeline</button>
+      </div>
+    </details>
   </div>
 </header>
 
@@ -86,6 +94,7 @@
       <div class="analysis-detail-body" id="analysis-details" hidden>
         <div class="stats" id="stats"></div>
         <div class="meter" id="meter" data-band="1"></div>
+        <p class="cc-note" id="health-note">Confidence summarizes dialect certainty, region quality, and coverage. Coverage is the share of body tokens the parser consumed. Construct coverage reports detected, resolved, and opaque constructs. None proves semantic correctness; compare findings with the SQL.</p>
         <p class="cc-note" id="cc-note">Paste some SQL to see how many paths a reader would have to walk.</p>
         <p class="cc-note" id="construct-note"></p>
       </div>
@@ -239,14 +248,36 @@
       </div>
     </div>
     <div class="msg" id="msg"></div>
+    <section class="lesson-panel" id="guided-lesson-panel" aria-labelledby="guided-lesson-title" hidden>
+      <div><h2 id="guided-lesson-title">Guided lesson</h2><button class="btn" id="guided-lesson-close" type="button">Close lesson</button></div>
+      <p id="guided-lesson-goal"></p><ol id="guided-lesson-steps"></ol>
+    </section>
+    <details class="diagnostic-panel" id="analysis-diagnostics" hidden>
+      <summary id="analysis-diagnostic-summary" aria-live="polite"></summary>
+      <ul class="diagnostic-list" id="analysis-diagnostic-list"></ul>
+    </details>
     <div class="view active" id="view-chart" role="tabpanel" aria-labelledby="tab-chart">
       <div id="canvas">
         <div id="stage" class="empty-stage"><div class="empty"><p>Paste SQL on the left. The flowchart updates automatically as you work.</p></div></div>
         <div class="zoom">
           <button class="btn" id="z-out" title="Zoom out">−</button>
           <button class="btn" id="z-in" title="Zoom in">+</button>
-          <button class="btn" id="z-fit" title="Fit to window">Fit</button>
+          <button class="btn" id="z-fit" title="Show the full diagram"
+                  aria-label="Fit diagram overview">Fit overview</button>
         </div>
+        <aside class="flow-inspector" id="flow-inspector" aria-labelledby="flow-inspector-title" hidden>
+          <header>
+            <div><span class="flow-inspector-kicker">Selected step</span>
+              <h3 id="flow-inspector-title">Selected step</h3></div>
+            <button type="button" class="btn" id="flow-clear-focus" hidden>Clear focus</button>
+          </header>
+          <div id="flow-inspector-body" aria-live="polite"></div>
+          <div class="flow-inspector-actions" id="flow-source-actions"></div>
+        </aside>
+        <details class="flow-legend" id="flow-legend" hidden>
+          <summary>Diagram key</summary>
+          <div id="flow-legend-items" aria-live="polite"></div>
+        </details>
       </div>
     </div>
     <div class="view" id="view-code" role="tabpanel" aria-labelledby="tab-code">
@@ -254,6 +285,13 @@
     </div>
   </section>
 </main>
+
+<dialog class="lesson-confirm" id="lesson-confirm" aria-labelledby="lesson-confirm-title">
+  <h2 id="lesson-confirm-title">Replace the current SQL?</h2>
+  <p>Your editor contents will be replaced by the selected lesson.</p>
+  <div><button class="btn" id="lesson-confirm-cancel" type="button">Keep my SQL</button>
+    <button class="btn primary" id="lesson-confirm-apply" type="button">Replace and open lesson</button></div>
+</dialog>
 
 <footer>Parsing is heuristic, not a compiler. Dynamic SQL is opaque to any static eye, and semicolon-free batches may bend the picture. Trust it as a map, not as the territory.</footer>
 
@@ -273,6 +311,9 @@
 <script src="dist/src/analysis/confidence.js"></script>
 <script src="dist/src/ui/large-input.js"></script>
 <script src="dist/src/ui/splitter.js"></script>
+<script src="dist/src/ui/flow-diagram.js"></script>
+<script src="dist/src/ui/diagnostics.js"></script>
+<script src="dist/src/ui/lesson-picker.js"></script>
 <script src="dist/src/samples.js"></script>
 <script src="dist/src/app.js"></script>
 </body>

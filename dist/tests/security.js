@@ -69,6 +69,19 @@
         mermaid: reportMermaid });
     record('source and diagnostic strings remain plain data', hostileSql.indexOf(payloads[0]) >= 0 &&
         analysed.diagnostics.every(function (d) { return typeof d.message === 'string'; }), { sourcePreserved: hostileSql.indexOf(payloads[0]) >= 0 });
+    var hostileDiagnostics = document.createElement('div');
+    var hostileSummary = document.createElement('summary');
+    var hostileDetails = document.createElement('details');
+    var hostileList = document.createElement('ul');
+    hostileDiagnostics.appendChild(hostileDetails);
+    hostileDetails.appendChild(hostileSummary);
+    hostileDetails.appendChild(hostileList);
+    renderDiagnosticPanel(hostileSummary, hostileDetails, hostileList, [{
+            severity: 'warning', code: 'dynamic_sql', message: payloads[1], span: null, scope: 'document'
+        }], null);
+    record('hostile diagnostic text is escaped and has no invented source action', hostileList.textContent.indexOf(payloads[1]) >= 0 &&
+        !hostileList.querySelector('img,script,foreignObject,[onerror]') &&
+        hostileList.querySelectorAll('[data-action="source"]').length === 0, hostileList.innerHTML);
     /* toMermaid must not mutate the caller's graph: the same Graph is reused for
        draw.io, exports, and later renders. An io node that defaults its class
        during Mermaid emission previously leaked back into the shared model. */

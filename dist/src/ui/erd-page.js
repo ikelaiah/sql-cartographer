@@ -1,5 +1,5 @@
 "use strict";
-/* sql-cartographer v2.4.1 — ERD page controller.
+/* sql-cartographer v3.2.0 — ERD page controller.
    Parses schema DDL into the shared schema IR and draws an entity map of
    declared tables, views, and foreign keys. Declared constraints only: this
    page never infers a relationship from query text. */
@@ -7,7 +7,7 @@
     if (typeof document === 'undefined')
         return;
     var $ = function (id) { return document.getElementById(id); };
-    var sql = $('erd-sql'), gutter = $('erd-gutter'), msg = $('erd-msg'), cardsHost = $('erd-cards'), overlay = $('erd-overlay'), canvas = $('erd-canvas'), space = $('erd-space'), empty = $('erd-empty'), mermaidOut = $('erd-mermaid-out'), inspector = $('erd-inspector'), largeNotice = $('erd-large-notice'), findInput = $('erd-find'), findCount = $('erd-find-count'), compactInput = $('erd-compact');
+    var sql = $('erd-sql'), gutter = $('erd-gutter'), cardsHost = $('erd-cards'), overlay = $('erd-overlay'), canvas = $('erd-canvas'), space = $('erd-space'), empty = $('erd-empty'), mermaidOut = $('erd-mermaid-out'), inspector = $('erd-inspector'), largeNotice = $('erd-large-notice'), findInput = $('erd-find'), findCount = $('erd-find-count'), compactInput = $('erd-compact');
     var result = null;
     var cardEls = {};
     var adjacency = {};
@@ -53,208 +53,34 @@
             el.textContent = String(value);
     }
     function showDiagnostics() {
-        if (!msg || !result)
+        if (!result)
             return;
-        msg.textContent = '';
-        msg.classList.remove('show', 'warn');
-        var list = result.diagnostics || [];
-        if (!list.length)
-            return;
-        var errors = list.filter(function (d) { return d.severity === 'error'; }).length;
-        msg.classList.add('show');
-        if (!errors)
-            msg.classList.add('warn');
-        list.forEach(function (d) {
-            var line = document.createElement('span');
-            line.className = 'diag' + (d.severity === 'info' ? ' info' : '');
-            line.textContent = d.message + (d.span ? '  (' + d.span.start + '–' + d.span.end + ')' : '');
-            msg.appendChild(line);
+        renderDiagnosticPanel($('erd-diagnostic-summary'), $('erd-diagnostics'), $('erd-diagnostic-list'), result.diagnostics || [], function (span) {
+            diagnosticSelectSource(sql, gutter, span);
         });
-    }
-    function compactSummary(entity) {
-        var fkColumns = {}, pkCount = 0;
-        entity.keys.forEach(function (key) {
-            if (key.kind === 'pk')
-                pkCount++;
-            if (key.kind === 'fk')
-                key.columns.forEach(function (name) {
-                    fkColumns[name.toUpperCase()] = 1;
-                });
-        });
-        return entity.columns.length + ' cols \u00b7 ' + pkCount + ' PK \u00b7 ' +
-            Object.keys(fkColumns).length + ' FK';
     }
     function buildCard(entity) {
-        var card = document.createElement('article');
-        card.className = 'erd-card' + (entity.unresolved ? ' unresolved' : '') +
-            (entity.kind === 'view' ? ' erd-view' : '') + (compactMode ? ' compact' : '') +
-            (pinned[entity.id] ? ' pinned' : '');
-        card.setAttribute('data-entity-id', entity.id);
-        var head = document.createElement('header');
-        var kind = document.createElement('span');
-        kind.className = 'erd-kind';
-        kind.textContent = entity.unresolved ? 'external' : entity.kind;
-        var title = document.createElement('h3');
-        title.textContent = entity.name;
-        head.appendChild(kind);
-        head.appendChild(title);
-        var count = relCounts[entity.id] || 0;
-        if (count) {
-            var badge = document.createElement('span');
-            badge.className = 'erd-relcount';
-            badge.title = count + ' declared relationship' + (count === 1 ? '' : 's');
-            badge.textContent = String(count);
-            head.appendChild(badge);
-        }
-        var pin = document.createElement('button');
-        pin.type = 'button';
-        pin.className = 'erd-pin' + (pinned[entity.id] ? ' pinned' : '');
-        pin.textContent = '\u25C6';
-        pin.title = pinned[entity.id] ? 'Unpin position (Auto arrange may move it)'
-            : 'Pin position (Auto arrange keeps it)';
-        pin.addEventListener('click', function (event) {
-            event.stopPropagation();
-            if (pinned[entity.id]) {
-                delete pinned[entity.id];
-                layoutStatus('Unpinned ' + entity.name + '.');
-            }
-            else {
-                pinned[entity.id] = 1;
-                layoutStatus('Pinned ' + entity.name + ' \u00b7 Auto arrange keeps this position.');
-            }
-            pin.classList.toggle('pinned', !!pinned[entity.id]);
-            pin.title = pinned[entity.id] ? 'Unpin position (Auto arrange may move it)'
-                : 'Pin position (Auto arrange keeps it)';
-            card.classList.toggle('pinned', !!pinned[entity.id]);
-        });
-        head.appendChild(pin);
-        card.appendChild(head);
-        if (compactMode) {
-            var summary = document.createElement('p');
-            summary.className = 'erd-summary';
-            summary.textContent = compactSummary(entity);
-            card.appendChild(summary);
-        }
-        else {
-            var list = document.createElement('ul');
-            list.className = 'erd-cols';
-            if (entity.columns.length) {
-                var frag = document.createDocumentFragment();
-                entity.columns.forEach(function (column) {
-                    var row = document.createElement('li');
-                    row.setAttribute('data-column', column.name);
-                    if (queryPicking) {
-                        var pick = document.createElement('input');
-                        pick.type = 'checkbox';
-                        pick.className = 'qb-pick';
-                        pick.setAttribute('data-column', column.name);
-                        pick.setAttribute('data-entity-id', entity.id);
-                        pick.setAttribute('aria-label', 'Select ' + entity.name + '.' + column.name + ' for the query');
-                        pick.checked = !!queryPickedKeys[entity.id + '|' +
-                            schemaNormColumn(column.name)];
-                        pick.addEventListener('click', function (event) {
-                            event.stopPropagation();
-                            if (queryTeachingNow()) {
-                                event.preventDefault();
-                                if (typeof window.erdQueryPanelTeachColumn === 'function') {
-                                    window.erdQueryPanelTeachColumn(entity.id, column.name);
-                                }
-                            }
-                        });
-                        pick.addEventListener('change', function () {
-                            if (queryTeachingNow())
-                                return;
-                            if (typeof window.erdQueryPanelTogglePick === 'function') {
-                                window.erdQueryPanelTogglePick(entity.id, column.name, pick.checked);
-                            }
-                        });
-                        row.appendChild(pick);
-                    }
-                    var name = document.createElement('span');
-                    name.className = 'erd-col-name';
-                    name.textContent = column.name;
-                    var type = document.createElement('span');
-                    type.className = 'erd-col-type';
-                    type.textContent = column.type || '—';
-                    type.title = column.type || 'no declared type';
-                    var flags = document.createElement('span');
-                    flags.className = 'erd-badges';
-                    erdColumnKeys(entity, column).forEach(function (key) {
-                        var tag = document.createElement('b');
-                        tag.className = 'erd-badge erd-badge-' + key.toLowerCase();
-                        tag.textContent = key;
-                        flags.appendChild(tag);
-                    });
-                    if (column.identity) {
-                        var idTag = document.createElement('b');
-                        idTag.className = 'erd-badge erd-badge-id';
-                        idTag.textContent = 'ID';
-                        idTag.title = 'identity / auto-increment';
-                        flags.appendChild(idTag);
-                    }
-                    if (column.generated || column.computed) {
-                        var genTag = document.createElement('b');
-                        genTag.className = 'erd-badge erd-badge-gen';
-                        genTag.textContent = column.computed ? 'COMP' : 'GEN';
-                        genTag.title = column.computed ? 'computed column' : 'generated column';
-                        flags.appendChild(genTag);
-                    }
-                    if (!column.nullable) {
-                        var nnTag = document.createElement('b');
-                        nnTag.className = 'erd-badge erd-badge-nn';
-                        nnTag.textContent = 'NN';
-                        nnTag.title = 'not null';
-                        flags.appendChild(nnTag);
-                    }
-                    row.appendChild(name);
-                    row.appendChild(type);
-                    row.appendChild(flags);
-                    frag.appendChild(row);
-                });
-                list.appendChild(frag);
-            }
-            else {
-                var none = document.createElement('li');
-                none.className = 'erd-no-cols';
-                none.textContent = entity.unresolved ? 'referenced but not declared' : 'no declared columns';
-                list.appendChild(none);
-            }
-            card.appendChild(list);
-        }
-        card.tabIndex = 0;
-        card.addEventListener('click', function (event) {
-            if (queryPicking) {
-                var target = event.target;
-                if (target && target.closest && target.closest('.qb-pick'))
-                    return;
-                var row = target && target.closest
-                    ? target.closest('li[data-column]') : null;
-                if (row) {
-                    if (queryTeachingNow()) {
-                        if (typeof window.erdQueryPanelTeachColumn === 'function') {
-                            window.erdQueryPanelTeachColumn(entity.id, row.getAttribute('data-column') || '');
-                        }
-                        return;
-                    }
-                    var box = row.querySelector('input.qb-pick');
-                    if (box) {
-                        box.click();
-                        return;
-                    }
+        return erdBuildCard(entity, {
+            compact: compactMode, pinned: !!pinned[entity.id],
+            relationshipCount: relCounts[entity.id] || 0, queryPicking: queryPicking,
+            isTeaching: queryTeachingNow,
+            isPicked: function (id, column) { return !!queryPickedKeys[id + '|' + schemaNormColumn(column)]; },
+            columnKeys: erdColumnKeys,
+            togglePin: function (selected) {
+                if (pinned[selected.id]) {
+                    delete pinned[selected.id];
+                    layoutStatus('Unpinned ' + selected.name + '.');
                 }
-            }
-            selectEntity(selectedId === entity.id ? null : entity.id);
+                else {
+                    pinned[selected.id] = 1;
+                    layoutStatus('Pinned ' + selected.name + ' · Auto arrange keeps this position.');
+                }
+                return !!pinned[selected.id];
+            },
+            teachColumn: function (id, column) { window.erdQueryPanelTeachColumn(id, column); },
+            toggleColumn: function (id, column, checked) { window.erdQueryPanelTogglePick(id, column, checked); },
+            toggleSelection: function (id) { selectEntity(selectedId === id ? null : id); }
         });
-        card.addEventListener('keydown', function (event) {
-            var target = event.target;
-            if (queryPicking && target && target.closest && target.closest('.qb-pick'))
-                return;
-            if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                selectEntity(selectedId === entity.id ? null : entity.id);
-            }
-        });
-        return card;
     }
     function selectEntity(id) {
         selectedId = id;
@@ -332,12 +158,11 @@
             }
         }
     }
-    /* Selection inspector: every declared FK touching the selected entity, with
-       direction, column mapping, cardinality, and constraint name. Never inferred. */
+    /* Keep graph state here; the view builder receives only the selected entity,
+       declared relationships, and explicit navigation callbacks. */
     function renderInspector() {
         if (!inspector || !result)
             return;
-        inspector.textContent = '';
         var selected = selectedId ? result.entities.filter(function (entity) {
             return entity.id === selectedId;
         })[0] : null;
@@ -346,75 +171,16 @@
             return;
         }
         inspector.hidden = false;
-        var head = document.createElement('header');
-        var title = document.createElement('h4');
-        title.textContent = selected.name;
-        var clear = document.createElement('button');
-        clear.type = 'button';
-        clear.className = 'erd-inspector-close';
-        clear.textContent = 'Clear';
-        clear.addEventListener('click', function () { selectEntity(null); });
-        head.appendChild(title);
-        head.appendChild(clear);
-        inspector.appendChild(head);
-        function group(label, rows, outgoing) {
-            if (!rows.length)
-                return;
-            var heading = document.createElement('p');
-            heading.className = 'erd-inspector-group';
-            heading.textContent = label;
-            inspector.appendChild(heading);
-            rows.forEach(function (rel) {
-                var otherId = outgoing ? rel.fromId : rel.toId;
-                var other = result.entities.filter(function (entity) {
-                    return entity.id === otherId;
-                })[0];
-                var row = document.createElement('button');
-                row.type = 'button';
-                row.className = 'erd-rel-row';
-                var arrow = document.createElement('span');
-                arrow.className = 'erd-rel-arrow';
-                arrow.textContent = outgoing ? '\u2192' : '\u2190';
-                var name = document.createElement('span');
-                name.className = 'erd-rel-name';
-                name.textContent = other ? other.name : otherId;
-                var detail = document.createElement('span');
-                detail.className = 'erd-rel-detail';
-                detail.textContent = rel.toColumns.join(',') + ' \u2192 ' +
-                    (rel.fromColumns.join(',') || 'PK');
-                var meta = document.createElement('span');
-                meta.className = 'erd-rel-meta';
-                meta.textContent = (rel.cardinality === 'one-to-one' ? '1:1' : '1:N') +
-                    (rel.optional ? ' optional' : '') + (rel.name ? ' \u00b7 ' + rel.name : '');
-                row.appendChild(arrow);
-                row.appendChild(name);
-                row.appendChild(detail);
-                row.appendChild(meta);
-                row.title = 'Select ' + name.textContent;
-                row.addEventListener('click', function () {
-                    selectEntity(otherId);
-                    var card = cardEls[otherId];
-                    if (card && card.scrollIntoView) {
-                        card.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
-                    }
-                });
-                inspector.appendChild(row);
-            });
-        }
-        group('References (FK out)', result.relationships.filter(function (rel) {
-            return rel.toId === selected.id;
-        }), true);
-        group('Referenced by (FK in)', result.relationships.filter(function (rel) {
-            return rel.fromId === selected.id && rel.toId !== selected.id;
-        }), false);
-        if (!result.relationships.some(function (rel) {
-            return rel.fromId === selected.id || rel.toId === selected.id;
-        })) {
-            var none = document.createElement('p');
-            none.className = 'erd-inspector-empty';
-            none.textContent = 'No declared foreign keys.';
-            inspector.appendChild(none);
-        }
+        erdRenderInspector(inspector, {
+            selected: selected, entities: result.entities, relationships: result.relationships,
+            clear: function () { selectEntity(null); },
+            select: function (otherId) {
+                selectEntity(otherId);
+                var card = cardEls[otherId];
+                if (card && card.scrollIntoView)
+                    card.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' });
+            }
+        });
     }
     /* Adjacency and degree are precomputed so selecting a hub table in an
        800-table estate stays O(degree) instead of O(tables × relationships). */
@@ -1094,7 +860,7 @@
         setStat('erd-columns', result.stats.columns);
         setStat('erd-relationships', result.stats.relationships);
         setStat('erd-unresolved', result.stats.unresolved);
-        setStat('erd-diagnostics', result.diagnostics.length);
+        setStat('erd-diagnostic-count', result.diagnostics.length);
         selectedId = null;
         renderCards();
         renderInspector();
@@ -1178,26 +944,43 @@
             }
         });
     }
-    var sample = $('btn-erd-sample');
-    if (sample)
-        sample.addEventListener('click', function () {
+    lessonPickerAttach({
+        inputId: 'erd-sql', menuId: 'guided-lesson-menu', dialogId: 'lesson-confirm',
+        confirmId: 'lesson-confirm-apply', cancelId: 'lesson-confirm-cancel',
+        closePanelId: 'guided-lesson-close', panelId: 'guided-lesson-panel',
+        titleId: 'guided-lesson-title', goalId: 'guided-lesson-goal',
+        stepsId: 'guided-lesson-steps', lessons: SQL_CARTOGRAPHER_LESSONS,
+        extraButtons: [
+            { id: 'btn-erd-sample', createLesson: function () {
+                    return {
+                        id: 'advanced-tsql-schema', title: 'T-SQL schema sample',
+                        goal: 'Representative T-SQL schema with declared constraints.',
+                        dialect: 'tsql', view: 'erd', source: SQL_CARTOGRAPHER_ERD_SAMPLE_TSQL,
+                        steps: [], showPanel: false
+                    };
+                } },
+            { id: 'btn-erd-sample-db2', createLesson: function () {
+                    return {
+                        id: 'advanced-db2-schema', title: 'DB2 schema sample',
+                        goal: 'Representative DB2 schema with declared constraints.',
+                        dialect: 'db2', view: 'erd', source: SQL_CARTOGRAPHER_ERD_SAMPLE_DB2,
+                        steps: [], showPanel: false
+                    };
+                } }
+        ],
+        onLoad: function (lesson) {
             if (!sql)
                 return;
-            sql.value = SQL_CARTOGRAPHER_ERD_SAMPLE_TSQL;
+            if (scheduleTimer !== null) {
+                clearTimeout(scheduleTimer);
+                scheduleTimer = null;
+            }
+            sql.value = lesson.source;
             drawGutter();
             render();
             sql.focus();
-        });
-    var sampleDb2 = $('btn-erd-sample-db2');
-    if (sampleDb2)
-        sampleDb2.addEventListener('click', function () {
-            if (!sql)
-                return;
-            sql.value = SQL_CARTOGRAPHER_ERD_SAMPLE_DB2;
-            drawGutter();
-            render();
-            sql.focus();
-        });
+        }
+    });
     var clear = $('btn-erd-clear');
     if (clear)
         clear.addEventListener('click', function () {

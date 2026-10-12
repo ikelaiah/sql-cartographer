@@ -1,11 +1,12 @@
 "use strict";
-/* ===== UI ===== */
+/* sql-cartographer v3.2.0 — flow page controller and explicit navigation. */
 (function () {
     if (typeof document === 'undefined')
         return;
     var $ = function (id) { return document.getElementById(id); };
     var sql = $('sql'), gutter = $('gutter'), out = $('mermaid-out'), stage = $('stage'), canvas = $('canvas'), msg = $('msg'), largeInputNotice = $('large-input-notice');
-    var scale = 1, panX = 0, panY = 0, lastCode = '', lastDialect = 'tsql', lastGraph = null, lastTitle = '', lastDirection = 'TD', lastResult = null, estate = null, workspaceFiles = null, activeObjectId = null, renderSeq = 0;
+    var scale = 1, panX = 0, panY = 0, selectedFlowNodeId = null, viewportMode = 'reading', lastCode = '', lastDialect = 'tsql', lastGraph = null, lastTitle = '', lastDirection = 'TD', lastResult = null, estate = null, workspaceFiles = null, activeObjectId = null, renderSeq = 0;
+    var viewport = { scale: scale, panX: panX, panY: panY }, viewportBeforeFocus = null;
     /* v1.9.0 — the active parsed catalogue plus its raw text and parse
        diagnostics, so Apply/Clear re-run the analysis with (or without) it. */
     var currentCatalogue = null, currentCatalogueText = '', currentCatalogueDiagnostics = [];
@@ -34,6 +35,8 @@
     }
     sql.addEventListener('scroll', function () { gutter.scrollTop = sql.scrollTop; });
     sql.addEventListener('input', function () {
+        if (selectedFlowNodeId)
+            clearFlowFocus();
         workspaceFiles = null;
         estate = null;
         activeObjectId = null;
@@ -317,10 +320,8 @@
         }
     }
     function showDiagnostics(list, extra) {
-        var lines = (list || []).map(function (d) { return d.message; });
-        if (extra)
-            lines.push(extra);
-        showMsg(lines.join('\n'), 'warn');
+        renderDiagnosticPanel($('analysis-diagnostic-summary'), $('analysis-diagnostics'), $('analysis-diagnostic-list'), list || [], function (span) { diagnosticSelectSource(sql, gutter, span); });
+        showMsg(extra || '', 'warn');
     }
     function setAnalysisHealth(confidence, coverage, diagnosticCount) {
         confidence = Number.isFinite(confidence) ? confidence : 0;
@@ -399,6 +400,7 @@
     function loadObjectSource(object) {
         if (!object)
             return;
+        clearFlowFocus();
         sql.value = object.source;
         drawGutter();
         $('object-select').value = object.id;
@@ -550,56 +552,55 @@
         render(result.mermaid, result.graph);
     }
     function highlightSource(span) {
-        if (!span || span.start === undefined || span.end === undefined)
-            return;
-        var start = Math.max(0, Math.min(sql.value.length, span.start));
-        var end = Math.max(start, Math.min(sql.value.length, span.end));
-        sql.focus();
-        sql.setSelectionRange(start, end);
-        var line = sql.value.slice(0, start).split('\n').length - 1;
-        sql.scrollTop = Math.max(0, line * 20 - 80);
-        gutter.scrollTop = sql.scrollTop;
+        flowDiagramHighlightSource(sql, gutter, span);
+    }
+    function selectFlowNode(node, graph) {
+        if (!selectedFlowNodeId) {
+            viewportBeforeFocus = { scale: viewport.scale, panX: viewport.panX, panY: viewport.panY };
+        }
+        selectedFlowNodeId = node.id;
+        var panel = $('flow-inspector');
+        panel.hidden = false;
+        $('flow-clear-focus').hidden = false;
+        flowDiagramSetFocus(stage, graph, node.id);
+        flowDiagramFrameFocus(stage, canvas, viewport, graph, node.id, panel);
+        scale = viewport.scale;
+        panX = viewport.panX;
+        panY = viewport.panY;
+        var objectIsHere = !!(node.objectId && estate && estate.objects.some(function (object) {
+            return object.id === node.objectId;
+        }));
+        flowDiagramRenderInspector(panel, graph, node, sql.value.length, highlightSource, objectIsHere
+            ? function () {
+                clearFlowFocus();
+                activeObjectId = node.objectId || null;
+                var object = activeObject();
+                loadObjectSource(object);
+                $('opt-scope').value = 'internal';
+                run();
+            }
+            : null);
+    }
+    function clearFlowFocus() {
+        selectedFlowNodeId = null;
+        $('flow-inspector').hidden = true;
+        $('flow-clear-focus').hidden = true;
+        if (lastGraph)
+            flowDiagramSetFocus(stage, lastGraph, null);
+        if (viewportBeforeFocus) {
+            viewport.scale = viewportBeforeFocus.scale;
+            viewport.panX = viewportBeforeFocus.panX;
+            viewport.panY = viewportBeforeFocus.panY;
+            scale = viewport.scale;
+            panX = viewport.panX;
+            panY = viewport.panY;
+            flowDiagramApply(stage, viewport);
+            viewportBeforeFocus = null;
+        }
     }
     function attachNodeLinks(graph) {
-        var elements = stage.querySelectorAll('.node');
-        Array.prototype.forEach.call(elements, function (el) {
-            var node = (graph.nodes || []).filter(function (n) {
-                return el.id === n.id || el.id.indexOf('-' + n.id + '-') >= 0;
-            })[0];
-            if (!node || (!node.source && !node.objectId))
-                return;
-            if (node.source) {
-                el.setAttribute('data-source-start', String(node.source.start));
-                el.setAttribute('data-source-end', String(node.source.end));
-            }
-            if (node.objectId)
-                el.setAttribute('data-object-id', node.objectId);
-            el.setAttribute('tabindex', '0');
-            el.setAttribute('role', 'button');
-            var open = function (e) {
-                e.stopPropagation();
-                /* External nodes carry their complete identity in objectId, but only
-                   objects in the current estate are navigable; external/temp placeholders
-                   fall back to source selection. */
-                var navigable = node.objectId && estate &&
-                    estate.objects.some(function (o) { return o.id === node.objectId; });
-                if (navigable) {
-                    activeObjectId = node.objectId;
-                    var object = activeObject();
-                    loadObjectSource(object);
-                    $('opt-scope').value = 'internal';
-                    run();
-                }
-                else
-                    highlightSource(node.source);
-            };
-            el.addEventListener('click', open);
-            el.addEventListener('keydown', function (e) {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    open(e);
-                }
-            });
+        flowDiagramAttachNodes(stage, graph, function (node) {
+            selectFlowNode(node, graph);
         });
     }
     function render(code, graph) {
@@ -607,49 +608,40 @@
             showMsg('Mermaid could not be loaded. The Mermaid tab still holds your diagram source.');
             return;
         }
-        var ticket = ++renderSeq, id = 'g' + Date.now() + '-' + ticket;
-        try {
-            mermaid.render(id, code).then(function (res) {
-                if (ticket !== renderSeq)
-                    return;
-                stage.classList.remove('empty-stage');
-                /* Mermaid output is inserted as markup so node links stay clickable.
-                   This is safe only because mermaid.initialize is called with
-                   securityLevel:'strict' (see the init below), which strips scripts
-                   and event handlers; tests/security.ts asserts both the strict
-                   render and that hostile labels never become executable markup. Do
-                   not change that security level or insert unescaped SQL here. */
-                stage.innerHTML = res.svg;
-                attachNodeLinks(graph || lastGraph);
-                fit();
-            }).catch(function (e) {
-                if (ticket !== renderSeq)
-                    return;
-                showMsg('Mermaid could not draw this chart: ' + (e && e.message ? e.message : e) +
-                    '\n\nThe Mermaid tab still holds the source.');
-            });
-        }
-        catch (e) {
-            showMsg('Mermaid could not draw this chart: ' + e.message);
-        }
+        var ticket = ++renderSeq;
+        flowDiagramRender(stage, code, graph || lastGraph, mermaid, function () { return ticket === renderSeq; }, function () {
+            attachNodeLinks(graph || lastGraph);
+            flowDiagramRenderLegend($('flow-legend'), $('flow-legend-items'), graph || lastGraph);
+            if (selectedFlowNodeId) {
+                var selected = (graph || lastGraph).nodes.filter(function (node) {
+                    return node.id === selectedFlowNodeId;
+                })[0];
+                if (selected)
+                    selectFlowNode(selected, graph || lastGraph);
+                else
+                    clearFlowFocus();
+            }
+            if (!selectedFlowNodeId)
+                fit(viewportMode);
+        }, function (message) {
+            showMsg('Mermaid could not draw this chart: ' + message +
+                '\n\nThe Mermaid tab still holds the source.');
+        });
     }
     /* zoom + pan */
-    function apply() { stage.style.transform = 'translate(' + panX + 'px,' + panY + 'px) scale(' + scale + ')'; }
-    function fit() {
-        var svg = stage.querySelector('svg');
-        scale = 1;
-        panX = 0;
-        panY = 0;
-        if (svg) {
-            var bb = svg.getBoundingClientRect(), cb = canvas.getBoundingClientRect();
-            var s = Math.min(1, (cb.width - 40) / (bb.width || 1), (cb.height - 40) / (bb.height || 1));
-            scale = Math.max(0.15, s);
-        }
-        apply();
+    function syncViewport() { viewport.scale = scale; viewport.panX = panX; viewport.panY = panY; }
+    function apply() { syncViewport(); flowDiagramApply(stage, viewport); }
+    function fit(mode = viewportMode) {
+        viewportMode = mode;
+        flowDiagramFit(stage, canvas, viewport, mode);
+        scale = viewport.scale;
+        panX = viewport.panX;
+        panY = viewport.panY;
     }
     $('z-in').onclick = function () { scale = Math.min(4, scale * 1.2); apply(); };
     $('z-out').onclick = function () { scale = Math.max(0.1, scale / 1.2); apply(); };
-    $('z-fit').onclick = fit;
+    $('z-fit').onclick = function () { fit('overview'); };
+    $('flow-clear-focus').onclick = clearFlowFocus;
     var dragging = false, sx = 0, sy = 0;
     canvas.addEventListener('mousedown', function (e) { dragging = true; sx = e.clientX - panX; sy = e.clientY - panY; canvas.classList.add('dragging'); });
     window.addEventListener('mousemove', function (e) { if (!dragging)
@@ -720,16 +712,40 @@
         }).catch(function (err) { showMsg('Could not read those files: ' + err.message); });
         this.value = '';
     };
-    $('btn-sample').onclick = function () {
-        var d = $('opt-dialect').value;
-        workspaceFiles = null;
-        estate = null;
-        activeObjectId = null;
-        sql.value = SQL_CARTOGRAPHER_SAMPLES[d] || SQL_CARTOGRAPHER_SAMPLES.tsql;
-        drawGutter();
-        run();
-    };
+    lessonPickerAttach({
+        inputId: 'sql', menuId: 'guided-lesson-menu', dialogId: 'lesson-confirm',
+        confirmId: 'lesson-confirm-apply', cancelId: 'lesson-confirm-cancel',
+        closePanelId: 'guided-lesson-close', panelId: 'guided-lesson-panel',
+        titleId: 'guided-lesson-title', goalId: 'guided-lesson-goal',
+        stepsId: 'guided-lesson-steps', lessons: SQL_CARTOGRAPHER_LESSONS,
+        extraButtons: [{ id: 'btn-sample', createLesson: function () {
+                    var choice = $('opt-dialect').value;
+                    var dialect = choice === 'auto' ? lastDialect : choice;
+                    return { id: 'advanced-sample', title: dialect.toUpperCase() + ' sample',
+                        goal: 'Representative ' + dialect.toUpperCase() + ' SQL for exploring the full analyser.',
+                        dialect: dialect, view: 'flow', source: SQL_CARTOGRAPHER_SAMPLES[dialect] || SQL_CARTOGRAPHER_SAMPLES.tsql,
+                        steps: [], showPanel: false };
+                } }],
+        onLoad: function (lesson) {
+            clearFlowFocus();
+            workspaceFiles = null;
+            estate = null;
+            activeObjectId = null;
+            if (timer !== null) {
+                clearTimeout(timer);
+                timer = null;
+            }
+            $('opt-dialect').value = lesson.dialect;
+            $('opt-view').value = lesson.view === 'query' ? 'query' : 'flow';
+            $('opt-scope').value = 'internal';
+            sql.value = lesson.source;
+            drawGutter();
+            updateLargeInputNotice();
+            run();
+        }
+    });
     $('btn-clear').onclick = function () {
+        clearFlowFocus();
         workspaceFiles = null;
         estate = null;
         activeObjectId = null;
@@ -782,6 +798,7 @@
         run();
     };
     $('object-select').onchange = function () {
+        clearFlowFocus();
         activeObjectId = this.value;
         loadObjectSource(activeObject());
         run();
@@ -815,7 +832,7 @@
             showMsg('Draw a chart first, then it can be saved.');
             return;
         }
-        var data = new XMLSerializer().serializeToString(svg);
+        var data = new XMLSerializer().serializeToString(flowDiagramCloneForExport(svg));
         var blob = new Blob([data], { type: 'image/svg+xml' });
         var a = document.createElement('a');
         a.href = URL.createObjectURL(blob);

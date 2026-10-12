@@ -22,8 +22,8 @@ connection, sign-in, or installation is required.
 > database compiler. Treat diagrams as investigation aids and verify important
 > findings against the source SQL and target database.
 
-> **Trust model:** SQL Cartographer v3.1.0 asserts semantic relationships only where
-> static evidence supports them. Dynamic and ambiguous regions stay explicit.
+> **Trust model:** The v3.2.0 release candidate asserts semantic relationships only
+> where static evidence supports them. Dynamic and ambiguous regions stay explicit.
 > See [Accuracy](docs/ACCURACY.md) and the [v2 accuracy contract](docs/V2_ACCURACY_CONTRACT.md).
 
 > **Breaking change (rename):** The project was renamed from *ProcFlow* to
@@ -48,7 +48,7 @@ connection, sign-in, or installation is required.
 
 ## Quick start
 
-1. Download the `v3.1.0` runtime ZIP from the [GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.1.0), or clone this repository.
+1. Download the `v3.1.0` runtime ZIP from the [latest published GitHub release](https://github.com/ikelaiah/sql-cartographer/releases/tag/v3.1.0), or clone this repository.
 2. Open `index.html` in a current Chromium, Firefox, or Edge browser.
 3. Paste SQL or import local files, select a dialect or **Auto**, and choose
    **Refresh**.
@@ -164,6 +164,10 @@ learning path for users, contributors, and reviewers.
 - [ADR-003](docs/decisions/ADR-003-aggregates-derive-group-by.md) — why
   aggregates derive their `GROUP BY` from the remaining picks.
 - [v3.1.0 release note](docs/releases/v3.1.0.md) — current release details.
+- [v3.2.0 release candidate](docs/releases/v3.2.0.md) — implementation and
+  local qualification evidence. The public tag and runtime release are pending.
+- [v3.2.0 specification](docs/plans/v3.2.0.md) and
+  [implementation checklist](tasks/todo.md) — scope and delivery record.
 - [Roadmap](ROADMAP.md) — the historical v1.x / v2.0 accuracy workstreams,
   all shipped.
 

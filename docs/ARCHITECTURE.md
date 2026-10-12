@@ -17,6 +17,7 @@ flowchart TD
     cat["catalogue.ts<br/>explicit object resolution"]
     rep["report.ts<br/>report → dataset → object graph"]
     state["app.ts — app state"]
+    view["ui/flow-diagram.ts<br/>viewport + evidence presentation"]
     exp["exporters.ts<br/>deterministic layered layout"]
     out["Mermaid / SVG / draw.io / workspace"]
 
@@ -29,6 +30,7 @@ flowchart TD
     lin --> state
     cat --> state
     rep --> state
+    state --> view --> out
     state --> exp --> out
 ```
 
@@ -75,6 +77,9 @@ flowchart TD
 
     subgraph flowui["Flow page — index.html"]
         app["app.ts"]
+        fv["ui/flow-diagram.ts<br/>viewport + evidence inspector"]
+        dg["ui/diagnostics.ts<br/>shared finding views"]
+        lp["ui/lesson-picker.ts<br/>protected sample replacement"]
         li["ui/large-input.ts"]
         sp["ui/splitter.ts"]
     end
@@ -87,6 +92,7 @@ flowchart TD
         clip["ui/clipboard.ts"]
         qv["ui/erd-query-view.ts"]
         q["ui/erd-query.ts"]
+        ev["ui/erd-view.ts<br/>card + relationship inspector DOM"]
         page["ui/erd-page.ts"]
     end
 
@@ -126,16 +132,26 @@ flowchart TD
   layout, and saved query) plus presentation filters. The only module permitted
   to touch `localStorage`.
 - `src/samples.ts` — the bundled demo SQL loaded by **Load sample**.
+- `src/ui/flow-diagram.ts` — Mermaid viewport, keyboard node selection,
+  neighbourhood focus, contextual legend, and evidence inspector. It decorates
+  a `Graph` and delegates source/object navigation to the controller.
+- `src/ui/diagnostics.ts` — text-safe diagnostic lists and clamped source
+  navigation shared by both pages.
+- `src/ui/lesson-picker.ts` — curated lesson steps and a cancellable replacement
+  dialog; it performs no persistence.
 - `src/schema.ts` and `src/erd.ts` — declared-constraint schema IR, ERD layout,
   and layout files for the ERD page.
 - `src/query.ts` — ERD query builder: join-graph pathfinding over declared
   foreign keys, aggregates/GROUP BY, and dialect-quoted SQL emission.
 - `src/query-store.ts` — pure, versioned query files and saved-query
   serialization with schema-fingerprint pruning.
-- `src/ui/erd-page.ts` — ERD interaction: entity cards, inspector, layout
-  application and pinning, zoom, orthogonal edge routing, and event wiring. It
-  consumes the decoration contract (`erdQueryPanelState`) to draw checkboxes,
-  plan highlights, and problem rings.
+- `src/ui/erd-view.ts` — stateless entity-card and relationship-inspector DOM
+  builders. Typed inputs and callbacks keep layout, query, and selection state
+  in their controllers.
+- `src/ui/erd-page.ts` — ERD interaction: layout application and pinning, zoom,
+  orthogonal edge routing, and event wiring. It consumes the decoration
+  contract (`erdQueryPanelState`) to draw checkboxes, plan highlights, and
+  problem rings.
 - `src/ui/erd-query.ts` — query-builder panel state, events, teaching, and the
   floating SQL window. It owns no DOM builders.
 - `src/ui/erd-query-view.ts` — query-builder view builders. Pure DOM functions

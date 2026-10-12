@@ -9,6 +9,10 @@ behaviour, versions, or file paths.
   `CHANGELOG.md`, which are the canonical history from v1.14.0 onward.
 - **`v1.3.0-implementation-plan.md`**, **`V2_ACCURACY_CONTRACT_DRAFT.md`**, and
   **`ACCURACY_GAPS.md`** are historical planning or audit documents.
+- **[v2.0.0 qualification plan](v2.0.0-qualification-plan.md)** and
+  **[qualification tasks](v2.0.0-qualification-tasks.md)** preserve the former
+  `tasks/plan.md` and `tasks/todo.md`. The active planning documents now cover
+  the [v3.2.0 proposal](../plans/v3.2.0.md).
 
 For current documentation, start from the documentation index in
 [`../../README.md`](../../README.md) and [`../RELEASES.md`](../RELEASES.md).

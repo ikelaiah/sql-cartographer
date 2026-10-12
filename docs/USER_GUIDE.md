@@ -11,9 +11,12 @@ SSRS/RDL report definition and renders an explorable diagram.
 - [Reading the diagram](#reading-the-diagram)
   - [Node provenance](#node-provenance)
   - [Edge kind](#edge-kind)
+  - [Selection and viewport](#selection-and-viewport)
   - [Traceability](#traceability)
 - [Main workflows](#main-workflows)
+  - [Guided lessons](#guided-lessons)
   - [Database review](#database-review)
+  - [Diagnostics and analysis health](#diagnostics-and-analysis-health)
   - [ERD query builder](#erd-query-builder)
   - [Report and dataset review](#report-and-dataset-review)
   - [Catalogue-assisted resolution](#catalogue-assisted-resolution)
@@ -24,8 +27,9 @@ SSRS/RDL report definition and renders an explorable diagram.
 
 ## First run
 
-1. Download the v3.1.0 runtime ZIP from the repository release, or clone the
-   repository for development.
+1. Download the v3.2.0 runtime ZIP from the repository release, or clone the
+   repository for development. While the release tag is pending, run the
+   release candidate from its checkout. The latest published runtime is v3.1.0.
 2. Open `index.html` in a current Chromium, Firefox, or Edge browser. The
    runtime does not require a server or a database connection.
 3. Paste SQL, choose **Auto** or a dialect, and select **Refresh**.
@@ -35,17 +39,16 @@ SSRS/RDL report definition and renders an explorable diagram.
 For a repeatable local server, run `python -m http.server 8000` in the runtime
 directory and open `http://127.0.0.1:8000/`.
 
-The fastest way to see what the tool does is **Load sample**, which pastes a
-bundled demo procedure and analyses it. Then use the **Object**, **Scope**, and
-**Direction** controls to move around the result.
+Choose **Guided lessons** for a short task with inspection steps. **Load sample**
+keeps the larger representative dialect examples for broader exploration.
 
 ## Your first five minutes
 
 A tour of one click each. No input to prepare.
 
-1. **Load sample.** Open `index.html`, leave the dialect on **Auto**, and press
-   **Load sample**. A representative T-SQL procedure appears and is analysed
-   immediately.
+1. **Choose a lesson.** Open `index.html`, choose **Guided lessons** →
+   **Follow a decision**, and follow the three prompts. Use **Load sample** for
+   the larger T-SQL procedure when you want a broad example.
 
 2. **Read the health strip first.** Along the bottom: confidence, coverage,
    diagnostics, and cyclomatic complexity. Coverage is the percentage of body
@@ -60,9 +63,10 @@ A tour of one click each. No input to prepare.
    read and write, and what does it call. The **View** control narrows further
    to control flow or query flow.
 
-4. **Check a fact against the source.** Click a node. The source panel selects
-   the exact characters that produced it. If you cannot find the evidence in
-   the source panel, do not rely on the edge.
+4. **Check a fact against the source.** Select a node to open its evidence
+   inspector. Review its provenance and connections, then choose **Go to
+   source** to select the exact characters. Inspecting a node does not replace
+   the current input.
 
 5. **Export.** **Copy Mermaid** gives the deterministic definition, **Save SVG**
    the rendered diagram, **Save draw.io** editable XML with provenance metadata.
@@ -112,6 +116,17 @@ edge form and label, in draw.io as the edge style and provenance attribute.
 | `call` | a procedure, function, or `EXEC` step | a statically identified invocation | a dynamic statement name or prepared statement |
 | `dependency` | query structure and object dependencies | a statically identified object read or reference | an unverified external identity |
 | `data` | query structure and column flow | a unique, conservatively proven producer → consumer definition | flow across ambiguous branch or loop definitions |
+
+### Selection and viewport
+
+Flow diagrams open at a reading scale, with the default Mermaid labels kept at
+12 CSS pixels or larger. Use **Fit overview** when you want the whole chart at
+once. Select a node to inspect its evidence and centre its immediate modelled
+neighbours; this highlights relationships already in the graph and does not
+claim a runtime execution path. **Clear focus** restores the prior viewport.
+The **Diagram key** lists the provenance and relationship kinds present in the
+current view. A node click opens context only; **Go to source** and **Open
+object** are explicit navigation actions.
 
 A worked example. This procedure is the input:
 
@@ -186,11 +201,29 @@ the export for the procedure above:
 %% n7:start provenance=synthetic reason=diagram exit
 ```
 
-Those spans are half-open character ranges into your input. Click a node in the
-source panel and the editor selects exactly those characters — which is why the
-source panel, not the diagram, is the authority for review.
+Those spans are half-open character ranges into your input. Choose **Go to
+source** in a node's inspector and the editor selects exactly those characters
+— which is why the source panel, not the diagram, is the authority for review.
 
 ## Main workflows
+
+### Guided lessons
+
+The **Guided lessons** menu offers four short examples across the two pages:
+
+- **Follow a decision** shows an IF/ELSE branch and its source.
+- **Follow data between steps** separates possible control order from a
+  resolved temporary-table dependency.
+- **Read a query pipeline** follows two CTEs to the result.
+- **Understand a schema join** uses declared foreign keys, then opens Query
+  Builder to explain repeated rows and copy the generated SQL.
+
+The first three are on `index.html`; the schema lesson is on `erd.html`. Each
+lesson sets its dialect and view, then lists the evidence to inspect and a way
+to copy the result. The existing **Load sample**, **T-SQL sample**, and **DB2
+sample** buttons still load the longer examples. Any lesson or sample asks
+before replacing a non-empty editor; **Keep my SQL** / **Keep my DDL** leaves
+the input untouched. Nothing is saved automatically.
 
 ### Database review
 
@@ -200,8 +233,26 @@ cursor operations, and exception paths. Switch to **Query structure** to see
 reads, writes, joins, CTEs, subqueries, and result sets. For a multi-object
 script, **Object dependencies** shows calls and table relationships.
 
-Use the source span selection and diagnostics before relying on a relationship
-in a change review. Dynamic SQL is deliberately shown as an opaque step.
+Select a flow step to read its provenance, evidence, and connection kinds. Use
+**Go to source** to navigate to a reported span; choose **Open object** to
+replace the current input with a known object. Dynamic SQL is deliberately
+shown as an opaque step. Review the diagnostic summary and its source actions
+before relying on a relationship in a change review.
+
+### Diagnostics and analysis health
+
+Both pages show findings in a concise summary with an expandable list. Each row
+keeps its severity, stable code, document or region scope, message, and source
+location when available. Common findings include a short next-step hint;
+**Go to source** appears only when a source span exists. Messages from unknown
+codes remain visible as written.
+
+The analysis **Details** panel defines the health measures. Confidence combines
+dialect certainty, per-region quality, and coverage. Coverage is the share of
+body tokens consumed by the parser. Construct coverage shows detected,
+resolved, and opaque constructs. These values describe parser evidence and do
+not guarantee semantic correctness; verify important findings against the
+input and target database.
 
 ### ERD query builder
 
