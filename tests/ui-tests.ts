@@ -353,6 +353,12 @@
       results.push({name:'a flow diagnostic selects its reported source span',
         pass:!!diagnosticSource&&get('sql').selectionEnd>get('sql').selectionStart&&
           get('sql').selectionStart>=0&&get('sql').selectionEnd<=get('sql').value.length});
+      get('btn-clear').click();
+      results.push({name:'clearing SQL also clears findings and their source actions',
+        pass:get('analysis-diagnostics').hidden&&
+          get('analysis-diagnostic-list').children.length===0&&
+          get('analysis-diagnostic-summary').textContent===''&&
+          get('diagnostic-val').textContent==='0'});
       get('opt-dialect').value='tsql';
       get('sql').value=[
         'CREATE PROC dbo.rec_ui AS',
@@ -574,8 +580,99 @@
         results.push({name:'delayed large input refreshes explicitly',
           pass:get('mermaid-out').textContent!==delayedBefore&&
             get('sql').value===delayedLargeSource});
-        finish(results);
+        reviewSourceOwnership();
       },500);
+      function reviewSourceOwnership(): void {
+        get('btn-report-clear').click();
+        get('btn-clear').click();
+        get('opt-scope').value='internal';
+        get('opt-dialect').value='tsql';
+        var ownerSource='CREATE PROC dbo.owner_first AS SELECT 1;\nGO\n'+
+          'CREATE PROC dbo.owner_second AS BEGIN\nSELECT 2; END SELECT (3;';
+        get('sql').value=ownerSource;
+        get('sql').dispatchEvent(new Event('input'));
+        get('btn-draw').click();
+        get('opt-scope').value='dependencies';
+        get('opt-scope').dispatchEvent(new Event('change'));
+        var firstSource=get('sql').value;
+        var estateAction=d.querySelector('#analysis-diagnostic-list button[data-action="source"]') as HTMLButtonElement;
+        if(estateAction) estateAction.click();
+        results.push({name:'an estate finding opens its owning object before selecting source',
+          pass:!!estateAction&&/owner_second/.test(get('sql').value)&&
+            get('sql').value!==firstSource&&get('sql').selectionEnd>get('sql').selectionStart});
+        get('object-select').selectedIndex=0;
+        get('object-select').dispatchEvent(new Event('change'));
+        setTimeout(function(){
+          var otherNode=Array.prototype.filter.call(d.querySelectorAll('#stage .node'),
+            function(element:Element){return /owner_second/.test(element.textContent||'');})[0];
+          if(otherNode) otherNode.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+          var objectAction=d.querySelector('#flow-source-actions button[data-action="source"]') as HTMLButtonElement;
+          if(objectAction) objectAction.click();
+          results.push({name:'a dependency node source action selects its own complete object',
+            pass:!!otherNode&&!!objectAction&&/owner_second/.test(get('sql').value)&&
+              get('sql').selectionStart===0&&get('sql').selectionEnd===get('sql').value.length});
+          get('sql').setSelectionRange(0,0);
+          get('sql').dispatchEvent(new KeyboardEvent('keydown',{key:'Tab',bubbles:true,cancelable:true}));
+          var tabEdited=get('sql').value;
+          if(objectAction) objectAction.click();
+          results.push({name:'a stale source action cannot overwrite a Tab edit',
+            pass:tabEdited.slice(0,4)==='    '&&get('sql').value===tabEdited});
+          get('report-text').value=rdlText;
+          get('btn-report-apply').click();
+          get('opt-scope').value='report';
+          get('opt-scope').dispatchEvent(new Event('change'));
+          var sqlBeforeReport=get('sql').value;
+          var reportAction=d.querySelector('#analysis-diagnostic-list button[data-action="source"]') as HTMLButtonElement;
+          if(reportAction) reportAction.click();
+          results.push({name:'a report finding selects report XML without replacing SQL',
+            pass:!!reportAction&&get('report-text').selectionEnd>get('report-text').selectionStart&&
+              get('sql').value===sqlBeforeReport&&get('report-menu').open});
+          setTimeout(function(){
+            var datasetNode=Array.prototype.filter.call(d.querySelectorAll('#stage .node'),
+              function(element:Element){return /Students/.test(element.textContent||'');})[0];
+            if(datasetNode) datasetNode.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+            var datasetAction=d.querySelector('#flow-source-actions button[data-action="source"]') as HTMLButtonElement;
+            if(datasetAction) datasetAction.click();
+            var selectedXml=get('report-text').value.slice(get('report-text').selectionStart,
+              get('report-text').selectionEnd);
+            results.push({name:'a report dataset node opens its XML evidence',
+              pass:!!datasetNode&&!!datasetAction&&/DataSet Name="Students"/.test(selectedXml)&&
+                get('sql').value===sqlBeforeReport});
+            var unappliedReport='<!--unapplied edit-->\n'+get('report-text').value;
+            get('report-text').value=unappliedReport;
+            get('report-text').setSelectionRange(0,0);
+            if(datasetAction) datasetAction.click();
+            results.push({name:'unapplied report edits suppress stale XML navigation without replacement',
+              pass:!!datasetAction&&get('report-text').value===unappliedReport&&
+                get('report-text').selectionStart===0&&get('report-text').selectionEnd===0});
+            var columnNode=Array.prototype.filter.call(d.querySelectorAll('#stage .node'),
+              function(element:Element){return /^StudentId$/.test((element.textContent||'').trim());})[0];
+            if(columnNode) columnNode.dispatchEvent(new MouseEvent('click',{bubbles:true}));
+            results.push({name:'report column spans without a recorded dataset owner have no source action',
+              pass:!!columnNode&&d.querySelectorAll('#flow-source-actions button[data-action="source"]').length===0});
+            frame.style.width='671px'; frame.style.height='404px';
+            results.push({name:'the stacked diagram toolbar scrolls without covering evidence',
+              pass:w.getComputedStyle(d.querySelector('.output-head')).position==='static'});
+            results.push({name:'report controls wrap without page-level horizontal overflow',
+              pass:d.documentElement.scrollWidth<=w.innerWidth,
+              detail:{width:w.innerWidth,scrollWidth:d.documentElement.scrollWidth}});
+            var overflowProbe=d.createElement('div');
+            overflowProbe.style.cssText='position:absolute;left:0;width:3000px;height:1px';
+            get('canvas').appendChild(overflowProbe);
+            if(columnNode) columnNode.focus();
+            get('canvas').scrollLeft=200;
+            if(columnNode) columnNode.dispatchEvent(new KeyboardEvent('keydown',
+              {key:'Enter',bubbles:true}));
+            results.push({name:'keyboard focus cannot scroll the diagram inspector outside its canvas',
+              pass:!!columnNode&&get('canvas').scrollLeft===0&&
+                get('flow-inspector').getBoundingClientRect().left>=
+                  get('canvas').getBoundingClientRect().left,
+              detail:{scrollLeft:get('canvas').scrollLeft}});
+            overflowProbe.remove();
+            finish(results);
+          },700);
+        },700);
+      }
     },1200);
   }
 })();

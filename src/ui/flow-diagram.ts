@@ -292,7 +292,10 @@ function flowDiagramRenderInspector(panel: HTMLElement, graph: Graph, node: Grap
       button.dataset.sourceStart=String(sourceSpan.start);
       button.dataset.sourceEnd=String(sourceSpan.end);
       button.textContent=spans.length>1?'Go to source '+(index+1):'Go to source';
-      button.addEventListener('click',function(){onSource(sourceSpan);});
+      button.addEventListener('click',function(event){
+        event.stopPropagation();
+        onSource(sourceSpan);
+      });
       actionPanel.appendChild(button);
     });
     if(onOpenObject){

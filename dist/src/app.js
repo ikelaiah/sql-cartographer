@@ -54,9 +54,7 @@
             var s = sql.selectionStart, en = sql.selectionEnd;
             sql.value = sql.value.slice(0, s) + '    ' + sql.value.slice(en);
             sql.selectionStart = sql.selectionEnd = s + 4;
-            drawGutter();
-            updateLargeInputNotice();
-            schedule(true);
+            sql.dispatchEvent(new Event('input'));
         }
     });
     var timer = null;
@@ -319,8 +317,61 @@
             el.classList.remove('has');
         }
     }
+    function objectSource(object) {
+        return { length: object.source.length, select: function (span) {
+                var current = activeObject();
+                if (!estate || estate.objects.indexOf(object) < 0 ||
+                    (current && sql.value !== current.source)) {
+                    showMsg('Refresh the edited SQL before navigating to its source.');
+                    return;
+                }
+                activeObjectId = object.id;
+                if (sql.value !== object.source)
+                    loadObjectSource(object);
+                diagnosticSelectSource(sql, gutter, span);
+            } };
+    }
+    function auxiliarySource(id, menuId, text) {
+        return { length: text.length, select: function (span) {
+                if ($(id).value !== text) {
+                    showMsg('Apply the edited input before navigating to its source.');
+                    return;
+                }
+                $(menuId).open = true;
+                diagnosticSelectSource($(id), null, span);
+            } };
+    }
+    function diagnosticSource(diagnostic) {
+        if (currentReportDiagnostics.indexOf(diagnostic) >= 0)
+            return auxiliarySource('report-text', 'report-menu', currentReportText);
+        if (currentCatalogueDiagnostics.indexOf(diagnostic) >= 0)
+            return auxiliarySource('catalogue-text', 'catalogue-menu', currentCatalogueText);
+        var owner = estate && estate.objects.filter(function (object) {
+            return object.diagnostics.indexOf(diagnostic) >= 0;
+        })[0];
+        return owner ? objectSource(owner) : null;
+    }
+    function nodeSource(node) {
+        if ($('opt-scope').value === 'report') {
+            /* Report/dataset spans belong to XML. Column spans are dataset-local;
+               the report graph does not retain their dataset owner. */
+            return ['report', 'dsembedded', 'dsshared', 'dsunresolved'].indexOf(node.cls) >= 0
+                ? auxiliarySource('report-text', 'report-menu', currentReportText) : null;
+        }
+        var owner = $('opt-scope').value === 'dependencies'
+            ? estate && estate.objects.filter(function (object) { return object.id === node.objectId; })[0]
+            : activeObject();
+        return owner ? objectSource(owner) : null;
+    }
     function showDiagnostics(list, extra) {
-        renderDiagnosticPanel($('analysis-diagnostic-summary'), $('analysis-diagnostics'), $('analysis-diagnostic-list'), list || [], function (span) { diagnosticSelectSource(sql, gutter, span); });
+        renderDiagnosticPanel($('analysis-diagnostic-summary'), $('analysis-diagnostics'), $('analysis-diagnostic-list'), list || [], function (span, diagnostic) {
+            var source = diagnosticSource(diagnostic);
+            if (source)
+                source.select(span);
+        }, function (diagnostic) {
+            var source = diagnosticSource(diagnostic);
+            return !!(source && diagnostic.span && diagnostic.span.end <= source.length);
+        });
         showMsg(extra || '', 'warn');
     }
     function setAnalysisHealth(confidence, coverage, diagnosticCount) {
@@ -458,7 +509,8 @@
             return;
         }
         if (!text.trim() && !(workspaceFiles && workspaceFiles.length)) {
-            showMsg('');
+            showDiagnostics([]);
+            clearFlowFocus();
             out.textContent = 'flowchart TD';
             stage.innerHTML = '<div class="empty"><p>Paste SQL on the left. The flowchart updates automatically as you work.</p></div>';
             stage.classList.add('empty-stage');
@@ -551,9 +603,6 @@
         lastDirection = opts.dir || 'TD';
         render(result.mermaid, result.graph);
     }
-    function highlightSource(span) {
-        flowDiagramHighlightSource(sql, gutter, span);
-    }
     function selectFlowNode(node, graph) {
         if (!selectedFlowNodeId) {
             viewportBeforeFocus = { scale: viewport.scale, panX: viewport.panX, panY: viewport.panY };
@@ -570,7 +619,8 @@
         var objectIsHere = !!(node.objectId && estate && estate.objects.some(function (object) {
             return object.id === node.objectId;
         }));
-        flowDiagramRenderInspector(panel, graph, node, sql.value.length, highlightSource, objectIsHere
+        var source = nodeSource(node);
+        flowDiagramRenderInspector(panel, graph, node, source ? source.length : 0, source ? source.select : function () { }, objectIsHere
             ? function () {
                 clearFlowFocus();
                 activeObjectId = node.objectId || null;

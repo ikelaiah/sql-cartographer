@@ -264,7 +264,9 @@ input[type=checkbox]{accent-color:var(--marigold);width:14px;height:14px}
 .menu-action:focus-visible{outline:2px solid var(--marigold);outline-offset:-1px}
 .view{flex:1;position:relative;overflow:hidden;display:none}
 .view.active{display:flex;flex-direction:column}
-#canvas{flex:1;overflow:hidden;position:relative;cursor:grab;
+/* Diagram pan uses the stage transform; native focus scrolling must not move
+   the fixed inspector and zoom controls with an off-screen SVG node. */
+#canvas{flex:1;overflow:clip;position:relative;cursor:grab;
   background-color:var(--canvas);
   background-image:radial-gradient(circle at 1px 1px,#22323e 1px,transparent 0);
   background-size:22px 22px}
@@ -368,7 +370,9 @@ footer{flex:0 0 auto;padding:6px 16px;color:var(--ink-faint);font-size:10.5px;
   .pane:first-child{min-height:430px}
   .pane:last-child{min-height:70vh}
   .view.active{min-height:60vh}
-  .output-head{position:sticky;top:58px;z-index:5}
+  /* Wrapped controls can cover the diagram at browser zoom. Keep them in flow. */
+  .output-head{position:static}
+  .command-menus{flex-wrap:wrap;min-width:0;max-width:100%;margin-left:0}
   .output-head .opts{order:3;flex-basis:100%}
   .analysis-detail-body{grid-template-columns:1fr}
   .stats{grid-row:auto}

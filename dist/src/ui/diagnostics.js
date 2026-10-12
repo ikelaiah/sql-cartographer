@@ -36,7 +36,7 @@ function diagnosticScopeLabel(diagnostic) {
     return diagnostic.scope === 'document' || (!diagnostic.scope && !diagnostic.span)
         ? 'Document' : 'Region';
 }
-function renderDiagnosticPanel(summary, details, list, diagnostics, onSource) {
+function renderDiagnosticPanel(summary, details, list, diagnostics, onSource, sourceAvailable) {
     var doc = list.ownerDocument, values = diagnostics || [], errors = 0, warnings = 0, notes = 0;
     list.textContent = '';
     values.forEach(function (diagnostic) {
@@ -84,7 +84,8 @@ function renderDiagnosticPanel(summary, details, list, diagnostics, onSource) {
         }
         item.appendChild(body);
         var span = diagnostic.span;
-        if (span && onSource && Number.isFinite(span.start) && Number.isFinite(span.end) &&
+        if (span && diagnostic.scope !== 'document' && onSource &&
+            (!sourceAvailable || sourceAvailable(diagnostic)) && Number.isFinite(span.start) && Number.isFinite(span.end) &&
             span.start >= 0 && span.end > span.start) {
             var sourceSpan = span;
             var actions = doc.createElement('div');
@@ -95,7 +96,10 @@ function renderDiagnosticPanel(summary, details, list, diagnostics, onSource) {
             locate.dataset.action = 'source';
             locate.textContent = 'Go to source';
             locate.setAttribute('aria-label', 'Go to source at character ' + span.start);
-            locate.addEventListener('click', function () { onSource(sourceSpan); });
+            locate.addEventListener('click', function (event) {
+                event.stopPropagation();
+                onSource(sourceSpan, diagnostic);
+            });
             actions.appendChild(locate);
             item.appendChild(actions);
         }
@@ -125,6 +129,7 @@ function diagnosticSelectSource(sql, gutter, span) {
     sql.setSelectionRange(start, end);
     var line = sql.value.slice(0, start).split('\n').length - 1;
     sql.scrollTop = Math.max(0, line * 20 - 80);
-    gutter.scrollTop = sql.scrollTop;
+    if (gutter)
+        gutter.scrollTop = sql.scrollTop;
 }
 //# sourceMappingURL=diagnostics.js.map

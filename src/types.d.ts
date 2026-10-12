@@ -112,7 +112,8 @@ declare function renderDiagnosticPanel(summary: HTMLElement,
                                        details: HTMLDetailsElement,
                                        list: HTMLElement,
                                        diagnostics: Diagnostic[],
-                                       onSource: ((span: SourceSpan) => void) | null): void;
+                                       onSource: ((span: SourceSpan, diagnostic: Diagnostic) => void) | null,
+                                       sourceAvailable?: (diagnostic: Diagnostic) => boolean): void;
 
 type TokenType = 'word' | 'op' | 'str' | 'num' | 'dollar';
 

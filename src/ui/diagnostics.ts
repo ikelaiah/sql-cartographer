@@ -39,7 +39,8 @@ function diagnosticScopeLabel(diagnostic: Diagnostic): string {
 
 function renderDiagnosticPanel(summary: HTMLElement, details: HTMLDetailsElement,
                                list: HTMLElement, diagnostics: Diagnostic[],
-                               onSource: ((span: SourceSpan) => void) | null): void {
+                               onSource: ((span: SourceSpan, diagnostic: Diagnostic) => void) | null,
+                               sourceAvailable?: (diagnostic: Diagnostic) => boolean): void {
   var doc=list.ownerDocument, values=diagnostics||[], errors=0, warnings=0, notes=0;
   list.textContent='';
   values.forEach(function(diagnostic){
@@ -88,7 +89,8 @@ function renderDiagnosticPanel(summary: HTMLElement, details: HTMLDetailsElement
     item.appendChild(body);
 
     var span=diagnostic.span;
-    if(span&&onSource&&Number.isFinite(span.start)&&Number.isFinite(span.end)&&
+    if(span&&diagnostic.scope!=='document'&&onSource&&
+       (!sourceAvailable||sourceAvailable(diagnostic))&&Number.isFinite(span.start)&&Number.isFinite(span.end)&&
        span.start>=0&&span.end>span.start){
       var sourceSpan:SourceSpan=span;
       var actions=doc.createElement('div');
@@ -98,7 +100,10 @@ function renderDiagnosticPanel(summary: HTMLElement, details: HTMLDetailsElement
       locate.dataset.action='source';
       locate.textContent='Go to source';
       locate.setAttribute('aria-label','Go to source at character '+span.start);
-      locate.addEventListener('click',function(){onSource(sourceSpan);});
+      locate.addEventListener('click',function(event){
+        event.stopPropagation();
+        onSource(sourceSpan,diagnostic);
+      });
       actions.appendChild(locate);
       item.appendChild(actions);
     }
@@ -117,7 +122,7 @@ function renderDiagnosticPanel(summary: HTMLElement, details: HTMLDetailsElement
   if(!values.length) details.open=false;
 }
 
-function diagnosticSelectSource(sql: HTMLTextAreaElement, gutter: HTMLElement,
+function diagnosticSelectSource(sql: HTMLTextAreaElement, gutter: HTMLElement | null,
                                 span: SourceSpan): void {
   var start=Math.max(0,Math.min(sql.value.length,span.start));
   var end=Math.max(start,Math.min(sql.value.length,span.end));
@@ -126,5 +131,5 @@ function diagnosticSelectSource(sql: HTMLTextAreaElement, gutter: HTMLElement,
   sql.setSelectionRange(start,end);
   var line=sql.value.slice(0,start).split('\n').length-1;
   sql.scrollTop=Math.max(0,line*20-80);
-  gutter.scrollTop=sql.scrollTop;
+  if(gutter) gutter.scrollTop=sql.scrollTop;
 }
